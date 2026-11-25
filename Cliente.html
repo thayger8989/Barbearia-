@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agendar Horário — Vortex Studio</title>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--tx:#14213d;--mut:#5b6678;--bd:#d6dce4;--red:#c8372d;--blue:#1d4e89;--ok:#2e7d4f;--btn:#14213d;--btnt:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#10151f;--card:#1a2230;--tx:#eef1f6;--mut:#9aa6ba;--bd:#2c3648;--red:#e4574d;--blue:#5b9be0;--ok:#5cc08a;--btn:#eef1f6;--btnt:#10151f}}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:480px;padding:16px;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1{font:700 22px/1.2 Georgia,"Times New Roman",serif;margin:0}
+.sub{color:var(--mut);font-size:14px;margin:4px 0 12px}
+.pole{height:10px;border-radius:5px;background:repeating-linear-gradient(135deg,var(--red) 0 12px,var(--card) 12px 24px,var(--blue) 24px 36px,var(--card) 36px 48px);border:1px solid var(--bd);margin:10px 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+form{display:grid;gap:10px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mut)}
+input,select{padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:16px;font-family:inherit}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{padding:11px 14px;border-radius:8px;border:0;background:var(--btn);color:var(--btnt);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
+.msg{margin-top:10px;font-size:14px;font-weight:600}
+.ok{color:var(--ok)}
+.err{color:var(--red)}
+</style>
+</head>
+<body>
+  <h1>Agendar Horário</h1>
+  <p class="sub">Escolha o serviço, data e horário para reservar na barbearia.</p>
+  <div class="pole"></div>
+
+  <div class="card">
+    <form id="form-cliente">
+      <label>Seu nome completo
+        <input id="cli-nome" type="text" required autocomplete="name" placeholder="Ex.: Lucas Almeida">
+      </label>
+
+      <label>Telefone / WhatsApp
+        <input id="cli-tel" type="tel" autocomplete="tel" placeholder="Ex.: 71999999999">
+      </label>
+
+      <label>Serviço
+        <select id="cli-srv" required>
+          <option value="">A carregar serviços...</option>
+        </select>
+      </label>
+
+      <div class="grid">
+        <label>Data
+          <input id="cli-data" type="date" required>
+        </label>
+        <label>Horário
+          <input id="cli-hora" type="time" required>
+        </label>
+      </div>
+
+      <label>Forma de pagamento
+        <select id="cli-pag">
+          <option value="local">Pagar no local</option>
+          <option value="app">Pago no app / Pix</option>
+        </select>
+      </label>
+
+      <button id="cli-btn" type="submit">Confirmar agendamento</button>
+    </form>
+    <div id="cli-msg" class="msg"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://uklmnvkpigftxjmafghr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
+
+    // Podes passar ?barbearia=UUID na URL ou usar o UUID fixo da Vortex Studio
+    const params = new URLSearchParams(window.location.search);
+    const BARBEARIA_ID = params.get("barbearia") || "c59372f5-536c-4127-bab0-7ac1c3950135";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const msgEl = document.getElementById("cli-msg");
+    const srvEl = document.getElementById("cli-srv");
+    const btnEl = document.getElementById("cli-btn");
+
+    // Define data de hoje por padrão
+    const hoje = new Date().toISOString().split("T")[0];
+    document.getElementById("cli-data").value = hoje;
+
+    function setMsg(texto, tipo) {
+      msgEl.textContent = texto;
+      msgEl.className = "msg " + (tipo || "");
+    }
+
+    function formatBRL(v) {
+      return "R$ " + Number(v || 0).toFixed(2).replace(".", ",");
+    }
+
+    async function carregarServicos() {
+      if (!BARBEARIA_ID || BARBEARIA_ID === "COLE_AQUI_O_UUID_DA_BARBEARIA") {
+        srvEl.innerHTML = '<option value="">Configure o ID da barbearia</option>';
+        setMsg("Falta configurar o ID da barbearia no código ou na URL (?barbearia=ID).", "err");
+        return;
+      }
+
+      const { data, error } = await sb.rpc("listar_servicos_publico", {
+        p_barbearia_id: BARBEARIA_ID
+      });
+
+      if (error) {
+        srvEl.innerHTML = '<option value="">Erro ao carregar</option>';
+        setMsg("Não foi possível carregar os serviços: " + error.message, "err");
+        return;
+      }
+
+      if (!data || !data.length) {
+        srvEl.innerHTML = '<option value="">Nenhum serviço disponível</option>';
+        setMsg("Nenhum serviço ativo encontrado para esta barbearia.", "err");
+        return;
+      }
+
+      srvEl.innerHTML = data.map((s) =>
+        `<option value="${s.id}">${s.nome} (${formatBRL(s.valor)} · ${s.duracao_min} min)</option>`
+      ).join("");
+    }
+
+    document.getElementById("form-cliente").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!srvEl.value) return;
+
+      btnEl.disabled = true;
+      setMsg("A enviar agendamento...", "");
+
+      const { error } = await sb.rpc("criar_agendamento_publico", {
+        p_barbearia_id: BARBEARIA_ID,
+        p_servico_id: srvEl.value,
+        p_cliente_nome: document.getElementById("cli-nome").value.trim(),
+        p_cliente_telefone: document.getElementById("cli-tel").value.trim() || null,
+        p_data: document.getElementById("cli-data").value,
+        p_hora: document.getElementById("cli-hora").value,
+        p_pagamento: document.getElementById("cli-pag").value
+      });
+
+      btnEl.disabled = false;
+
+      if (error) {
+        setMsg("Erro ao agendar: " + error.message, "err");
+        return;
+      }
+
+      document.getElementById("form-cliente").reset();
+      document.getElementById("cli-data").value = hoje;
+      setMsg("Agendamento confirmado! A barbearia já recebeu o aviso.", "ok");
+    });
+
+    carregarServicos();
+  </script>
+</body>
+</html>
