@@ -50,7 +50,6 @@ body.locked>*:not(#lock):not(#ver){display:none}
 .lk{width:100%;max-width:360px}
 :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 
-/* Alerta visual a piscar para novos agendamentos */
 #alerta-agendamento{display:none;position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:120;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:var(--red);color:#fff;font-weight:700;max-width:min(94vw,560px);width:max-content;box-shadow:0 10px 26px rgba(0,0,0,.35);animation:piscarAlerta .75s infinite alternate}
 #alerta-agendamento.ativo{display:flex}
 #alerta-agendamento button{padding:6px 12px;border-radius:8px;border:0;background:#fff;color:#14213d;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
@@ -179,7 +178,23 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <h2>Resumo do dia</h2>
 <div class="grid" id="tot"></div>
 <div class="card" id="det"></div>
-<div class="acts"><button class="b d" id="novo">Começar novo dia</button></div>
+<div class="acts">
+<button class="b p" id="btn-backup-dia" type="button">Salvar backup do dia agora</button>
+<button class="b d" id="novo" type="button">Começar novo dia</button>
+</div>
+<p class="mut" id="bk-status"></p>
+
+<h2>Histórico e backups na nuvem</h2>
+<div class="card">
+<label>Consultar backup de uma data
+<input id="bk-data" type="date">
+</label>
+<div class="acts">
+<button class="b p" id="btn-ver-backup" type="button">Ver backup da data</button>
+<button class="b" id="btn-listar-backups" type="button">Listar datas salvas</button>
+</div>
+<div id="bk-resultado"></div>
+</div>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -188,7 +203,7 @@ var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
 var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
 var BARBEARIA_URL=new URLSearchParams(window.location.search).get("barbearia")||"";
 var BARBEARIA_ID="";
-var VERSAO="1.6";
+var VERSAO="1.7";
 
 var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 var canalRealtime=null;
@@ -197,6 +212,7 @@ var SRV={};
 var PIX={k:"",n:"",c:""};
 var NOME="Barbearia";
 var S={ag:[],livre:0,seq:1};
+var timerBackupAuto=null;
 
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
 function $(i){return document.getElementById(i)}
@@ -205,9 +221,9 @@ function pv(a){return a.v!=null?Number(a.v):(SRV[a.srv]?SRV[a.srv].v:0)}
 function pm(a){return a.min!=null?Number(a.min):(SRV[a.srv]?SRV[a.srv].min:30)}
 function by(id){return S.ag.filter(function(a){return a.id===id})[0]}
 function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return (a.data||"")+(a.hora||"")<(b.data||"")+(b.hora||"")?-1:1})}
+function hojeIso(){return new Date().toISOString().slice(0,10)}
 var LBL={agendado:"Agendado",chegou:"No local",atendendo:"Em atendimento",finalizado:"Finalizado",faltou:"Faltou",cancelado:"Cancelado"};
 
-/* Alerta a piscar + vibração + som */
 var timerAlerta=null,audioCtx=null,alertasVistos={};
 document.addEventListener("pointerdown",function(){
   var AC=window.AudioContext||window.webkitAudioContext;
@@ -249,6 +265,139 @@ function fecharAlertaAgendamento(){
 }
 $("alerta-ok").addEventListener("click",fecharAlertaAgendamento);
 
+function montarResumoData(dataRef){
+  var listaDia=S.ag.filter(function(a){return (a.data||hojeIso())===dataRef});
+  var fin=listaDia.filter(function(a){return a.st==="finalizado"});
+  var faltCanc=listaDia.filter(function(a){return a.st==="faltou"||a.st==="cancelado"});
+  var rec=0,app=0,loc=0;
+  fin.forEach(function(a){
+    var v=pv(a);
+    rec+=v;
+    if(a.pago==="app")app+=v;
+    else loc+=v;
+  });
+  return {
+    barbearia_nome:NOME,
+    data_referencia:dataRef,
+    total_agendamentos:listaDia.length,
+    total_finalizados:fin.length,
+    total_faltas_cancelamentos:faltCanc.length,
+    receita_total:rec,
+    receita_app:app,
+    receita_local:loc,
+    itens:listaDia.map(function(a){
+      return {
+        hora:a.hora||"",
+        cliente:a.nome||"",
+        telefone:a.tel||"",
+        servico:a.srv_nome||"Serviço",
+        valor:pv(a),
+        duracao_min:pm(a),
+        pagamento:a.pago||"local",
+        status:a.st||"agendado"
+      };
+    })
+  };
+}
+
+function salvarBackupDia(dataRef, silencioso){
+  var refData=dataRef||hojeIso();
+  if(!sbClient||!BARBEARIA_ID)return Promise.resolve(false);
+  var resumo=montarResumoData(refData);
+  if(!silencioso)$("bk-status").textContent="A guardar backup de "+refData+" na nuvem...";
+  return sbClient
+    .from("backups_diarios")
+    .upsert({
+      barbearia_id:BARBEARIA_ID,
+      data_referencia:refData,
+      resumo:resumo
+    },{onConflict:"barbearia_id,data_referencia"})
+    .then(function(r){
+      if(r.error){
+        if(!silencioso)$("bk-status").textContent="Erro ao guardar backup: "+r.error.message;
+        return false;
+      }
+      if(!silencioso)$("bk-status").textContent="Backup de "+refData+" guardado na nuvem ("+resumo.total_finalizados+" finalizado(s) · "+brl(resumo.receita_total)+").";
+      return true;
+    });
+}
+
+function agendarBackupAutomatico(dataRef){
+  clearTimeout(timerBackupAuto);
+  var ref=dataRef||hojeIso();
+  timerBackupAuto=setTimeout(function(){
+    salvarBackupDia(ref,true);
+  },1200);
+}
+
+function renderResumoBackup(row){
+  if(!row||!row.resumo){
+    $("bk-resultado").innerHTML='<div class="empty">Nenhum backup encontrado para esta data.</div>';
+    return;
+  }
+  var r=row.resumo;
+  var itens=Array.isArray(r.itens)?r.itens:[];
+  var linhas=itens.length?itens.map(function(it){
+    return '<div class="card"><div class="row"><span class="nm">'+(esc(it.hora||"")+" · "+esc(it.cliente||""))+'</span><span class="tag">'+esc(LBL[it.status]||it.status||"")+'</span></div><div class="mut">'+esc(it.servico||"Serviço")+" · "+brl(it.valor)+" · "+(it.pagamento==="app"?"Pago no app":"Pagar no local")+'</div></div>';
+  }).join(""):'<div class="empty">Sem atendimentos registados nesse backup.</div>';
+
+  $("bk-resultado").innerHTML=
+    '<div class="card">'+
+    '<div class="row"><span class="nm">Backup de '+esc(row.data_referencia)+'</span><span class="tag ok">'+brl(r.receita_total)+'</span></div>'+
+    '<div class="mut">Finalizados: '+Number(r.total_finalizados||0)+' · Total marcados: '+Number(r.total_agendamentos||0)+' · Faltas/Cancelados: '+Number(r.total_faltas_cancelamentos||0)+'</div>'+
+    '<div class="mut">App (Pix): '+brl(r.receita_app)+' · Local: '+brl(r.receita_local)+'</div>'+
+    '</div>'+linhas;
+}
+
+function consultarBackupPorData(dataRef){
+  if(!dataRef){
+    $("bk-resultado").innerHTML='<div class="empty">Escolha uma data para consultar.</div>';
+    return;
+  }
+  if(!sbClient||!BARBEARIA_ID)return;
+  $("bk-resultado").innerHTML='<div class="empty">A consultar backup...</div>';
+  sbClient
+    .from("backups_diarios")
+    .select("data_referencia,resumo,criado_em")
+    .eq("barbearia_id",BARBEARIA_ID)
+    .eq("data_referencia",dataRef)
+    .maybeSingle()
+    .then(function(r){
+      if(r.error){
+        $("bk-resultado").innerHTML='<div class="empty">Erro ao consultar: '+esc(r.error.message)+'</div>';
+        return;
+      }
+      renderResumoBackup(r.data);
+    });
+}
+
+function listarBackupsSalvos(){
+  if(!sbClient||!BARBEARIA_ID)return;
+  $("bk-resultado").innerHTML='<div class="empty">A carregar datas salvas...</div>';
+  sbClient
+    .from("backups_diarios")
+    .select("data_referencia,resumo")
+    .eq("barbearia_id",BARBEARIA_ID)
+    .order("data_referencia",{ascending:false})
+    .limit(20)
+    .then(function(r){
+      if(r.error){
+        $("bk-resultado").innerHTML='<div class="empty">Erro ao listar: '+esc(r.error.message)+'</div>';
+        return;
+      }
+      var rows=r.data||[];
+      if(!rows.length){
+        $("bk-resultado").innerHTML='<div class="empty">Ainda não há backups guardados na nuvem.</div>';
+        return;
+      }
+      $("bk-resultado").innerHTML=rows.map(function(x){
+        var rec=(x.resumo&&x.resumo.receita_total)||0;
+        var fin=(x.resumo&&x.resumo.total_finalizados)||0;
+        return '<div class="card"><div class="row"><span class="nm">'+esc(x.data_referencia)+'</span><span class="tag ok">'+brl(rec)+'</span></div><div class="mut">'+fin+' finalizado(s)</div><div class="acts"><button type="button" class="b" data-bk-data="'+esc(x.data_referencia)+'">Abrir este dia</button></div></div>';
+      }).join("");
+    });
+}
+
 function setSt(id,st){
   var a=by(id);if(!a)return;
   a.st=st;
@@ -259,7 +408,11 @@ function setSt(id,st){
     var upd={status:st};
     if(st==="atendendo")upd.iniciado_em=new Date().toISOString();
     if(st==="finalizado"){upd.finalizado_em=new Date().toISOString();upd.pago=true}
-    sbClient.from("agendamentos").update(upd).eq("id",a.db_id).then(function(){});
+    sbClient.from("agendamentos").update(upd).eq("id",a.db_id).then(function(){
+      agendarBackupAutomatico(a.data||hojeIso());
+    });
+  }else{
+    agendarBackupAutomatico(a.data||hojeIso());
   }
   render();
 }
@@ -303,6 +456,7 @@ function tick(){var left=Math.ceil((S.livre-Date.now())/1000),b=$("free");
 if(left>0){b.style.display="block";$("cd").textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0")}else b.style.display="none"}
 
 document.addEventListener("click",function(e){var t=e.target;
+if(t.dataset&&t.dataset.bkData){$("bk-data").value=t.dataset.bkData;consultarBackupPorData(t.dataset.bkData);return}
 if(t.dataset&&t.dataset.cp){var s=SRV[$("srv").value];var tx=t.dataset.cp==="k"?PIX.k.trim():brcode(s?s.v:0);cp(tx,t);return}
 if(t.dataset&&t.dataset.del){
   var dk=t.dataset.del,m=$("svmsg");
@@ -317,6 +471,17 @@ if(t.dataset&&t.dataset.st){setSt(+t.dataset.id,t.dataset.st);return}
 if(t.dataset&&t.dataset.t){["ag","agendados","sala","cx","svc"].forEach(function(x){$(x).classList.toggle("hide",x!==t.dataset.t)});
 Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b===t)});render()}});
 
+$("btn-backup-dia").addEventListener("click",function(){
+  var ref=$("bk-data").value||hojeIso();
+  salvarBackupDia(ref,false);
+});
+$("btn-ver-backup").addEventListener("click",function(){
+  consultarBackupPorData($("bk-data").value||hojeIso());
+});
+$("btn-listar-backups").addEventListener("click",function(){
+  listarBackupsSalvos();
+});
+
 $("f").addEventListener("submit",function(e){e.preventDefault();
 if(!sbClient||!BARBEARIA_ID)return;
 var srvKey=$("srv").value;
@@ -325,7 +490,7 @@ if(!srvObj)return;
 var clienteNome=$("nome").value.trim();
 var horaVal=$("hora").value;
 var pagoVal=$("pago").value;
-var hoje=new Date().toISOString().slice(0,10);
+var hoje=hojeIso();
 
 sbClient.from("agendamentos").insert({
   barbearia_id:BARBEARIA_ID,
@@ -342,6 +507,7 @@ sbClient.from("agendamentos").insert({
   if(r.error){alert("Erro ao agendar: "+r.error.message);return}
   $("nome").value="";
   sincronizarAgendamentoNaLista(r.data);
+  agendarBackupAutomatico(r.data.data||hoje);
   dispararAlertaAgendamento({id:r.data.id,cliente_nome:r.data.cliente_nome,hora:r.data.hora,status:"agendado"});
 });
 });
@@ -414,7 +580,11 @@ fillSel()});
 var armed=false;
 $("novo").addEventListener("click",function(){var b=$("novo");
 if(!armed){armed=true;b.textContent="Tem certeza? Toque de novo";setTimeout(function(){armed=false;b.textContent="Começar novo dia"},4000);return}
-S.ag=[];S.livre=0;armed=false;b.textContent="Começar novo dia";render()});
+var dataEncerrada=(S.ag[0]&&S.ag[0].data)||$("bk-data").value||hojeIso();
+salvarBackupDia(dataEncerrada,false).then(function(){
+  S.ag=[];S.livre=0;armed=false;b.textContent="Começar novo dia";render();
+});
+});
 
 function sincronizarAgendamentoNaLista(ag){
   if(!ag||!ag.id)return;
@@ -491,6 +661,7 @@ function carregarAgendamentosIniciais(){
       var lista=q.data||[];
       lista.forEach(sincronizarAgendamentoNaLista);
       $("rt-status").textContent="Online ("+lista.length+" agendamento(s)).";
+      if(lista.length)agendarBackupAutomatico(lista[lista.length-1].data||hojeIso());
       var ultimoPendente=lista.filter(function(x){return x.status==="agendado"}).pop();
       if(ultimoPendente){
         var srvNome=(mapaServicosDb[ultimoPendente.servico_id]||{}).nome||"";
@@ -514,6 +685,7 @@ function iniciarRealtimeSupabase(){
       function(payload){
         if(payload.new){
           sincronizarAgendamentoNaLista(payload.new);
+          agendarBackupAutomatico(payload.new.data||hojeIso());
           if(payload.eventType==="INSERT"&&payload.new.status==="agendado"){
             var srvNome=(mapaServicosDb[payload.new.servico_id]||{}).nome||"";
             dispararAlertaAgendamento({
@@ -558,6 +730,7 @@ function lockUi(msg){
 function unlock(){
   document.body.classList.remove("locked");
   $("lm").textContent="";
+  if(!$("bk-data").value)$("bk-data").value=hojeIso();
   carregarDadosBarbearia();
   iniciarRealtimeSupabase();
 }
@@ -592,6 +765,7 @@ $("sair").addEventListener("click",function(){
   lockUi("Sessão encerrada.");
 });
 
+$("bk-data").value=hojeIso();
 aplicaNome();
 if(sbClient){
   sbClient.auth.getSession().then(function(res){
