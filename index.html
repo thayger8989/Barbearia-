@@ -17,8 +17,8 @@ h2{font:700 17px/1.2 Georgia,serif;margin:20px 0 8px}
 .pole{height:10px;border-radius:5px;background:repeating-linear-gradient(135deg,var(--red) 0 12px,var(--card) 12px 24px,var(--blue) 24px 36px,var(--card) 36px 48px);border:1px solid var(--bd);margin:10px 0}
 .free{display:none;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bd);margin:8px 0;font-weight:600}
 .free b{font:700 22px Georgia,serif;color:var(--red)}
-nav{display:flex;gap:6px;margin:12px 0}
-nav button{flex:1;padding:10px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-size:14px;font-weight:600;font-family:inherit}
+nav{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+nav button{flex:1;min-width:95px;padding:10px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-size:14px;font-weight:600;font-family:inherit}
 nav button.on{background:var(--btn);color:var(--btnt);border-color:var(--btn)}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0}
 .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
@@ -109,6 +109,7 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <div class="free" id="free">Novo horário abre em <b id="cd">10:00</b></div>
 <nav id="nav">
 <button data-t="ag" class="on">Agenda</button>
+<button data-t="agendados">Agendados</button>
 <button data-t="sala">Sala de espera</button>
 <button data-t="cx">Caixa do dia</button>
 <button data-t="svc">Serviços</button>
@@ -129,6 +130,12 @@ body.locked>*:not(#lock):not(#ver){display:none}
 </div>
 <h2>Horários do dia</h2>
 <div id="listaAg"></div>
+</section>
+
+<section id="agendados" class="hide">
+<h2>Agendamentos solicitados</h2>
+<p class="mut">Solicitações enviadas pelos clientes que aguardam confirmação ou chegada.</p>
+<div id="listaAgendados"></div>
 </section>
 
 <section id="sala" class="hide">
@@ -190,17 +197,17 @@ body.locked>*:not(#lock):not(#ver){display:none}
 var DEF={corte:{n:"Corte",min:50,v:35},pers:{n:"Corte personalizado",min:60,v:45},cb:{n:"Corte e barba",min:90,v:55}};
 var SRV=DEF;
 var PIX={k:"",n:"",c:""};
-var NOME='Barbearia Modelo',VERSAO='1.1';
+var NOME='Barbearia Modelo',VERSAO='1.5';
 var KEY="barb-proto-v1",S={ag:[],livre:0,seq:1};
 function load(){try{var r=localStorage.getItem(KEY);if(r){S=JSON.parse(r);if(S.srv)SRV=S.srv;if(S.pix)PIX=S.pix;if(S.nome)NOME=S.nome}}catch(e){}}
 function save(){S.srv=SRV;S.pix=PIX;S.nome=NOME;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
 function $(i){return document.getElementById(i)}
-function brl(n){return "R$ "+n.toFixed(2).replace(".",",")}
-function pv(a){return a.v!=null?a.v:SRV[a.srv].v}
-function pm(a){return a.min!=null?a.min:SRV[a.srv].min}
+function brl(n){return "R$ "+Number(n||0).toFixed(2).replace(".",",")}
+function pv(a){return a.v!=null?Number(a.v):(SRV[a.srv]?SRV[a.srv].v:0)}
+function pm(a){return a.min!=null?Number(a.min):(SRV[a.srv]?SRV[a.srv].min:30)}
 function by(id){return S.ag.filter(function(a){return a.id===id})[0]}
-function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return a.hora<b.hora?-1:1})}
+function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return (a.data||"")+(a.hora||"")<(b.data||"")+(b.hora||"")?-1:1})}
 var LBL={agendado:"Agendado",chegou:"No local",atendendo:"Em atendimento",finalizado:"Finalizado",faltou:"Faltou",cancelado:"Cancelado"};
 
 /* Alerta a piscar + vibração + som */
@@ -245,14 +252,20 @@ function fecharAlertaAgendamento(){
 }
 $("alerta-ok").addEventListener("click",fecharAlertaAgendamento);
 
-function seed(){if(S.ag.length)return;
-[["Carlos Mendes","corte","09:00","app"],["João Pedro Silva","cb","09:50","local"],["Marcos Andrade","pers","11:20","app"]].forEach(function(x){S.ag.push({id:S.seq++,nome:x[0],srv:x[1],hora:x[2],pago:x[3],st:"agendado"})});save()}
-
-function setSt(id,st){var a=by(id);if(!a)return;a.st=st;
-if(st==="atendendo")a.t0=Date.now();
-if(st==="finalizado"){S.livre=Date.now()+600000}
-if(st==="faltou"||st==="cancelado"){S.livre=0}
-save();render()}
+function setSt(id,st){
+  var a=by(id);if(!a)return;
+  a.st=st;
+  if(st==="atendendo")a.t0=Date.now();
+  if(st==="finalizado"){S.livre=Date.now()+600000}
+  if(st==="faltou"||st==="cancelado"){S.livre=0}
+  if(a.db_id&&sbClient){
+    var upd={status:st};
+    if(st==="atendendo")upd.iniciado_em=new Date().toISOString();
+    if(st==="finalizado"){upd.finalizado_em=new Date().toISOString();upd.pago=true}
+    sbClient.from("agendamentos").update(upd).eq("id",a.db_id).then(function(){});
+  }
+  save();render();
+}
 
 function btn(txt,id,st,cls){return '<button class="b '+(cls||"")+'" data-id="'+id+'" data-st="'+st+'">'+txt+'</button>'}
 
@@ -260,17 +273,24 @@ function renderAg(){var l=sorted(["agendado","chegou","atendendo","finalizado","
 if(!l.length)h='<div class="empty">Nenhum horário marcado. Agende o primeiro cliente acima.</div>';
 l.forEach(function(a){var s=SRV[a.srv]||DEF.corte,acts="";
 if(a.st==="agendado")acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
-h+='<div class="card"><div class="row"><span class="nm">'+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+s.n+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
+h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+(a.srv_nome||s.n)+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
 $("listaAg").innerHTML=h}
+
+function renderAgendados(){var l=sorted(["agendado"]),h="";
+if(!l.length)h='<div class="empty">Nenhum agendamento pendente na aba Agendados.</div>';
+l.forEach(function(a){var s=SRV[a.srv]||DEF.corte;
+var acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
+h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+(a.srv_nome||s.n)+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+'<div class="acts">'+acts+'</div></div>'});
+$("listaAgendados").innerHTML=h}
 
 function renderSala(){var at=sorted(["atendendo"]),ws=sorted(["chegou"]),h="",rest=0;
 if(!at.length)$("atend").innerHTML='<div class="empty">Ninguém na cadeira agora.</div>';
 else{var a=at[0],m=pm(a);rest=Math.max(0,m-Math.floor((Date.now()-a.t0)/60000));
-$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+(SRV[a.srv]||DEF.corte).n+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
+$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+(a.srv_nome||(SRV[a.srv]||DEF.corte).n)+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
 if(!ws.length)h='<div class="empty">Ninguém aguardando.</div>';
 var acc=rest;
 ws.forEach(function(a,i){var first=(!at.length&&i===0);
-h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+(SRV[a.srv]||DEF.corte).n+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':(!at.length&&i>0?"":""))+'</div>';
+h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+(a.srv_nome||(SRV[a.srv]||DEF.corte).n)+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':"")+'</div>';
 acc+=pm(a)});
 $("espera").innerHTML=h}
 
@@ -281,7 +301,7 @@ $("tot").innerHTML=k("Receita do dia",brl(rec))+k("Atendimentos",f.length);
 $("det").innerHTML='<div class="row"><span>Cortes normais</span><b>'+c.corte+'</b></div><div class="row"><span>Cortes personalizados</span><b>'+c.pers+'</b></div><div class="row"><span>Corte e barba</span><b>'+c.cb+'</b></div><div class="row"><span>Recebido pelo app (Pix)</span><b>'+brl(app)+'</b></div><div class="row"><span>Recebido no local</span><b>'+brl(loc)+'</b></div><div class="row"><span>Faltas e cancelamentos</span><b>'+sorted(["faltou","cancelado"]).length+'</b></div>'}
 
 function aplicaNome(){$('nomeb').textContent=NOME;$('lkn').textContent=NOME;document.title=NOME+' - Painel';$('ver').textContent='v'+VERSAO}
-function render(){aplicaNome();fillSel();renderPix();renderAg();renderSala();renderCx();renderSv();tick()}
+function render(){aplicaNome();fillSel();renderPix();renderAg();renderAgendados();renderSala();renderCx();renderSv();tick()}
 function tick(){var left=Math.ceil((S.livre-Date.now())/1000),b=$("free");
 if(left>0){b.style.display="block";$("cd").textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0")}else b.style.display="none"}
 
@@ -292,11 +312,11 @@ if(S.ag.some(function(a){return a.srv===dk})){m.textContent="Este serviço já t
 if(Object.keys(SRV).length<2){m.textContent="Mantenha pelo menos um serviço.";return}
 delete SRV[dk];m.textContent="";save();render();return}
 if(t.dataset&&t.dataset.st){setSt(+t.dataset.id,t.dataset.st);return}
-if(t.dataset&&t.dataset.t){["ag","sala","cx","svc"].forEach(function(x){$(x).classList.toggle("hide",x!==t.dataset.t)});
+if(t.dataset&&t.dataset.t){["ag","agendados","sala","cx","svc"].forEach(function(x){$(x).classList.toggle("hide",x!==t.dataset.t)});
 Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b===t)});render()}});
 
 $("f").addEventListener("submit",function(e){e.preventDefault();
-var novoAg={id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"};
+var novoAg={id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,srv_nome:SRV[$("srv").value].n,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"};
 S.ag.push(novoAg);
 save();$("nome").value="";render();
 dispararAlertaAgendamento({id:"local-"+novoAg.id,cliente_nome:novoAg.nome,hora:novoAg.hora,status:"agendado"})});
@@ -305,28 +325,32 @@ $("fs").addEventListener("submit",function(e){e.preventDefault();var n=$("sn").v
 SRV["s"+Date.now()]={n:n,min:+$("sm").value,v:+$("spv").value};save();$("fs").reset();$("svmsg").textContent="";render()});
 $("pago").addEventListener("change",renderPix);$("srv").addEventListener("change",renderPix);
 ["pxk","pxn","pxc"].forEach(function(id){$(id).addEventListener("input",function(){PIX[id==="pxk"?"k":id==="pxn"?"n":"c"]=this.value;save();renderPix()})});
-var AK='barb-auth-v1',AU=null,fails=0;
+
+var AK='barb-auth-v1',SK='barb-session-v1',AU=null,fails=0;
 function rd(){try{var r=localStorage.getItem(AK);return r?JSON.parse(r):null}catch(e){return null}}
+function setSessaoAtiva(ativo){try{if(ativo)localStorage.setItem(SK,'1');else localStorage.removeItem(SK)}catch(e){}}
+function temSessaoAtiva(){try{return localStorage.getItem(SK)==='1'}catch(e){return false}}
 function cyr(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(16)}
 function hex(a){return Array.prototype.map.call(a,function(x){return x.toString(16).padStart(2,'0')}).join('')}
 function hs(salt,pw){var t=salt+':'+pw;if(window.crypto&&crypto.subtle&&window.TextEncoder){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return hex(new Uint8Array(b))})}return Promise.resolve(cyr(t))}
 function rnd(){var a=new Uint8Array(16);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(var i=0;i<16;i++)a[i]=Math.floor(Math.random()*256);return hex(a)}
-function lockUi(){AU=rd();document.body.classList.add('locked');$('lp').value='';$('lp2').value='';$('lm').textContent='';
+function lockUi(){setSessaoAtiva(false);AU=rd();document.body.classList.add('locked');$('lp').value='';$('lp2').value='';$('lm').textContent='';
 $('lc').className=AU?'hide':'';$('lp2').required=!AU;$('lb').textContent=AU?'Entrar':'Criar senha';
 $('lkt').textContent=AU?'Digite a senha do administrador para abrir.':'Primeiro acesso: crie a senha do administrador.';
 $('lr').className=AU?'b d':'b d hide';$('lp').autocomplete=AU?'current-password':'new-password'}
-function unlock(){document.body.classList.remove('locked');render();iniciarRealtimeSupabase()}
-function initAuth(){lockUi();
+function unlock(){setSessaoAtiva(true);document.body.classList.remove('locked');render();iniciarRealtimeSupabase()}
+function initAuth(){AU=rd();if(AU&&temSessaoAtiva()){unlock()}else{lockUi()}
 $('lf').addEventListener('submit',function(e){e.preventDefault();var pw=$('lp').value,m=$('lm');
 if(!AU){if(pw.length<4){m.textContent='Use pelo menos 4 caracteres.';return}if(pw!==$('lp2').value){m.textContent='As senhas não conferem.';return}
 var s=rnd();hs(s,pw).then(function(h){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h}))}catch(x){}unlock()});return}
 hs(AU.s,pw).then(function(h){if(h===AU.h){fails=0;unlock()}else{fails++;$('lp').value='';m.textContent='Senha incorreta.';if(fails>=3){$('lb').disabled=true;m.textContent='Senha incorreta. Aguarde 10 segundos.';setTimeout(function(){$('lb').disabled=false;fails=0;m.textContent=''},10000)}}})});
 $('sair').addEventListener('click',lockUi);
 var arm2=false;$('lr').addEventListener('click',function(){var b=$('lr');if(!arm2){arm2=true;b.textContent='Tem certeza? Isso apaga todos os dados. Toque de novo';setTimeout(function(){arm2=false;b.textContent='Esqueci a senha (apaga tudo)'},5000);return}
-try{localStorage.removeItem(AK);localStorage.removeItem(KEY)}catch(x){}
+try{localStorage.removeItem(AK);localStorage.removeItem(KEY);localStorage.removeItem(SK)}catch(x){}
 location.reload()});
 $('cf').addEventListener('submit',function(e){e.preventDefault();var a=rd(),m=$('cm'),n=$('cn').value;if(!a)return;if(n.length<4){m.textContent='Use pelo menos 4 caracteres.';return}
 hs(a.s,$('ca').value).then(function(h){if(h!==a.h){m.textContent='Senha atual incorreta.';return}var s=rnd();hs(s,n).then(function(h2){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h2}))}catch(x){}$('cf').reset();m.textContent='Senha trocada.'})})})}
+
 $('nbi').addEventListener('input',function(){NOME=this.value.trim()||'Barbearia Modelo';save();aplicaNome()});
 var armed=false;
 $("novo").addEventListener("click",function(){var b=$("novo");
@@ -354,33 +378,130 @@ if(f==="n"){var n=t.value.trim();if(!n){t.value=SRV[k].n;return}SRV[k].n=n}
 else{var x=parseFloat(t.value);if(isNaN(x)||x<0||(f==="min"&&x<5)){t.value=SRV[k][f];return}SRV[k][f]=x}
 save();fillSel()});
 
-/* Ligação Supabase + Realtime */
+/* Ligação Supabase + Realtime (modo demonstração / pré-online) */
 var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
 var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
+var BARBEARIA_ID=new URLSearchParams(window.location.search).get("barbearia")||"c59372f5-536c-4127-bab0-7ac1c3950135";
+
 var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 var canalRealtime=null;
+var mapaServicosDb={};
 
-function iniciarRealtimeSupabase(){
-  if(!sbClient){$("rt-status").textContent="Supabase: SDK não carregado.";return}
-  $("rt-status").textContent="Supabase: ligado (a verificar barbearia)...";
-  sbClient.rpc("minha_barbearia").then(function(res){
-    if(res.error||!res.data){
-      $("rt-status").textContent="Supabase: conectado (sem sessão auth ativa para barbearia).";
-      return;
-    }
-    var barbeariaId=res.data;
-    $("rt-status").textContent="Supabase: tempo real ativo.";
-    sbClient.from("agendamentos").select("id,cliente_nome,hora,status").eq("barbearia_id",barbeariaId).eq("status","agendado").order("criado_em",{ascending:false}).limit(1).then(function(q){
-      if(q.data&&q.data.length)dispararAlertaAgendamento(q.data[0]);
+function sincronizarAgendamentoNaLista(ag){
+  if(!ag||!ag.id)return;
+  var srvInfo=mapaServicosDb[ag.servico_id]||{};
+  var nomeServico=srvInfo.nome||"Serviço agendado";
+  var valorServico=ag.valor!=null?Number(ag.valor):Number(srvInfo.valor||0);
+  var duracaoServico=ag.duracao_min!=null?Number(ag.duracao_min):Number(srvInfo.duracao_min||30);
+
+  var existente=S.ag.filter(function(item){return item.db_id===ag.id})[0];
+  if(!existente){
+    S.ag.push({
+      id:S.seq++,
+      db_id:ag.id,
+      nome:ag.cliente_nome||"Cliente",
+      tel:ag.cliente_telefone||"",
+      srv:"corte",
+      srv_nome:nomeServico,
+      v:valorServico,
+      min:duracaoServico,
+      data:ag.data||"",
+      hora:(ag.hora||"00:00").slice(0,5),
+      pago:ag.pagamento||"local",
+      st:ag.status||"agendado"
     });
-    if(canalRealtime){sbClient.removeChannel(canalRealtime)}
-    canalRealtime=sbClient.channel("painel-agendamentos-"+barbeariaId).on("postgres_changes",{event:"INSERT",schema:"public",table:"agendamentos",filter:"barbearia_id=eq."+barbeariaId},function(payload){
-      if(payload.new&&payload.new.status==="agendado")dispararAlertaAgendamento(payload.new);
-    }).subscribe();
-  });
+  }else{
+    existente.st=ag.status||existente.st;
+    existente.srv_nome=nomeServico;
+    existente.v=valorServico;
+    existente.min=duracaoServico;
+  }
+  save();
+  render();
 }
 
-initAuth();load();$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);$("pxk").value=PIX.k;$("pxn").value=PIX.n;$("pxc").value=PIX.c;render();setInterval(tick,1000);setInterval(function(){if(!$("sala").classList.contains("hide"))renderSala()},30000);
+function carregarAgendamentosIniciais(){
+  sbClient
+    .from("agendamentos")
+    .select("*")
+    .eq("barbearia_id",BARBEARIA_ID)
+    .order("data",{ascending:true})
+    .order("hora",{ascending:true})
+    .then(function(q){
+      if(q.error){
+        $("rt-status").textContent="Erro ao ler agendamentos: "+q.error.message;
+        return;
+      }
+      var lista=q.data||[];
+      lista.forEach(sincronizarAgendamentoNaLista);
+      $("rt-status").textContent="Online ("+lista.length+" agendamento(s) carregado(s)). Aguardando novos...";
+      var ultimoPendente=lista.filter(function(x){return x.status==="agendado"}).pop();
+      if(ultimoPendente){
+        var srvNome=(mapaServicosDb[ultimoPendente.servico_id]||{}).nome||"";
+        dispararAlertaAgendamento({
+          id:ultimoPendente.id,
+          cliente_nome:ultimoPendente.cliente_nome+(srvNome?" ("+srvNome+")":""),
+          hora:ultimoPendente.hora,
+          status:"agendado"
+        });
+      }
+    });
+}
+
+function iniciarRealtimeSupabase(){
+  if(!sbClient){
+    $("rt-status").textContent="Supabase: SDK não carregado.";
+    return;
+  }
+  $("rt-status").textContent="Supabase: conectando à barbearia...";
+
+  sbClient.from("servicos").select("id,nome,valor,duracao_min").eq("barbearia_id",BARBEARIA_ID).then(function(resSrv){
+    if(resSrv.data){
+      resSrv.data.forEach(function(s){mapaServicosDb[s.id]=s});
+      S.ag.forEach(function(item){
+        if(item.db_id&&item.srv_nome==="Serviço agendado")render();
+      });
+    }
+    carregarAgendamentosIniciais();
+  });
+
+  if(canalRealtime)sbClient.removeChannel(canalRealtime);
+  canalRealtime=sbClient
+    .channel("painel-agendamentos-"+BARBEARIA_ID)
+    .on(
+      "postgres_changes",
+      {event:"*",schema:"public",table:"agendamentos",filter:"barbearia_id=eq."+BARBEARIA_ID},
+      function(payload){
+        if(payload.new){
+          sincronizarAgendamentoNaLista(payload.new);
+          if(payload.eventType==="INSERT"&&payload.new.status==="agendado"){
+            var srvNome=(mapaServicosDb[payload.new.servico_id]||{}).nome||"";
+            dispararAlertaAgendamento({
+              id:payload.new.id,
+              cliente_nome:(payload.new.cliente_nome||"Cliente")+(srvNome?" ("+srvNome+")":""),
+              hora:payload.new.hora,
+              status:"agendado"
+            });
+          }
+        }
+      }
+    )
+    .subscribe(function(status){
+      if(status==="SUBSCRIBED"){
+        carregarAgendamentosIniciais();
+      }
+    });
+}
+
+load();
+initAuth();
+$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);
+$("pxk").value=PIX.k;
+$("pxn").value=PIX.n;
+$("pxc").value=PIX.c;
+render();
+setInterval(tick,1000);
+setInterval(function(){if(!$("sala").classList.contains("hide"))renderSala()},30000);
 </script>
 </body>
 </html>
