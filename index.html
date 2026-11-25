@@ -49,9 +49,19 @@ body.locked>*:not(#lock):not(#ver){display:none}
 #ver{position:fixed;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--mut);opacity:.85;pointer-events:none;z-index:101}
 .lk{width:100%;max-width:360px}
 :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* Alerta visual a piscar para novos agendamentos */
+#alerta-agendamento{display:none;position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:120;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:var(--red);color:#fff;font-weight:700;max-width:min(94vw,560px);width:max-content;box-shadow:0 10px 26px rgba(0,0,0,.35);animation:piscarAlerta .75s infinite alternate}
+#alerta-agendamento.ativo{display:flex}
+#alerta-agendamento button{padding:6px 12px;border-radius:8px;border:0;background:#fff;color:#14213d;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
+@keyframes piscarAlerta{0%{background-color:#c8372d;transform:translateX(-50%) scale(1)}100%{background-color:#d97706;transform:translateX(-50%) scale(1.03)}}
 </style>
 </head>
 <body class="locked">
+<div id="alerta-agendamento" role="alert" aria-live="assertive">
+  <span id="alerta-texto">Novo agendamento aguardando!</span>
+  <button type="button" id="alerta-ok">OK, vi</button>
+</div>
 <div id="ver"></div>
 <div id="lock">
 <div class="card lk">
@@ -94,6 +104,7 @@ body.locked>*:not(#lock):not(#ver){display:none}
 </svg>
 <div class="row"><h1 id="nomeb">Barbearia Modelo</h1><button class="b" id="sair" type="button">Sair</button></div>
 <p class="sub">Painel do barbeiro. Protótipo para testar as telas e as regras.</p>
+<p class="mut" id="rt-status">Supabase: a aguardar ligação...</p>
 <div class="pole"></div>
 <div class="free" id="free">Novo horário abre em <b id="cd">10:00</b></div>
 <nav id="nav">
@@ -174,11 +185,12 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <p class="mut">Relatório em PDF e backup entram na versão com banco de dados.</p>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 var DEF={corte:{n:"Corte",min:50,v:35},pers:{n:"Corte personalizado",min:60,v:45},cb:{n:"Corte e barba",min:90,v:55}};
 var SRV=DEF;
 var PIX={k:"",n:"",c:""};
-var NOME='Barbearia Modelo',VERSAO='1.0';
+var NOME='Barbearia Modelo',VERSAO='1.1';
 var KEY="barb-proto-v1",S={ag:[],livre:0,seq:1};
 function load(){try{var r=localStorage.getItem(KEY);if(r){S=JSON.parse(r);if(S.srv)SRV=S.srv;if(S.pix)PIX=S.pix;if(S.nome)NOME=S.nome}}catch(e){}}
 function save(){S.srv=SRV;S.pix=PIX;S.nome=NOME;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -190,6 +202,48 @@ function pm(a){return a.min!=null?a.min:SRV[a.srv].min}
 function by(id){return S.ag.filter(function(a){return a.id===id})[0]}
 function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return a.hora<b.hora?-1:1})}
 var LBL={agendado:"Agendado",chegou:"No local",atendendo:"Em atendimento",finalizado:"Finalizado",faltou:"Faltou",cancelado:"Cancelado"};
+
+/* Alerta a piscar + vibração + som */
+var timerAlerta=null,audioCtx=null,alertasVistos={};
+document.addEventListener("pointerdown",function(){
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(!audioCtx&&AC)audioCtx=new AC();
+  if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume().catch(function(){});
+},{once:true});
+function tocarSom(){
+  if(!audioCtx)return;
+  try{
+    var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+    osc.type="sine";
+    osc.frequency.setValueAtTime(880,audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.18,audioCtx.currentTime);
+    osc.connect(gain);gain.connect(audioCtx.destination);
+    osc.start();osc.stop(audioCtx.currentTime+0.25);
+  }catch(e){}
+}
+function vibrarCelular(){
+  if("vibrate" in navigator){navigator.vibrate([400,150,400,150,600])}
+}
+function dispararAlertaAgendamento(ag){
+  if(!ag||ag.status!=="agendado")return;
+  var chave=ag.id||((ag.cliente_nome||"")+"-"+(ag.hora||""));
+  if(alertasVistos[chave])return;
+  var hora=(ag.hora||"").slice(0,5);
+  $("alerta-texto").textContent="AGENDAMENTO AGUARDANDO: "+(ag.cliente_nome||"Cliente")+(hora?" às "+hora:"");
+  $("alerta-agendamento").classList.add("ativo");
+  $("alerta-agendamento").dataset.chave=chave;
+  vibrarCelular();tocarSom();
+  clearInterval(timerAlerta);
+  timerAlerta=setInterval(function(){vibrarCelular();tocarSom()},4000);
+}
+function fecharAlertaAgendamento(){
+  var chave=$("alerta-agendamento").dataset.chave;
+  if(chave)alertasVistos[chave]=true;
+  $("alerta-agendamento").classList.remove("ativo");
+  clearInterval(timerAlerta);timerAlerta=null;
+  if("vibrate" in navigator)navigator.vibrate(0);
+}
+$("alerta-ok").addEventListener("click",fecharAlertaAgendamento);
 
 function seed(){if(S.ag.length)return;
 [["Carlos Mendes","corte","09:00","app"],["João Pedro Silva","cb","09:50","local"],["Marcos Andrade","pers","11:20","app"]].forEach(function(x){S.ag.push({id:S.seq++,nome:x[0],srv:x[1],hora:x[2],pago:x[3],st:"agendado"})});save()}
@@ -204,7 +258,7 @@ function btn(txt,id,st,cls){return '<button class="b '+(cls||"")+'" data-id="'+i
 
 function renderAg(){var l=sorted(["agendado","chegou","atendendo","finalizado","faltou","cancelado"]),h="";
 if(!l.length)h='<div class="empty">Nenhum horário marcado. Agende o primeiro cliente acima.</div>';
-l.forEach(function(a){var s=SRV[a.srv],acts="";
+l.forEach(function(a){var s=SRV[a.srv]||DEF.corte,acts="";
 if(a.st==="agendado")acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
 h+='<div class="card"><div class="row"><span class="nm">'+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+s.n+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
 $("listaAg").innerHTML=h}
@@ -212,16 +266,16 @@ $("listaAg").innerHTML=h}
 function renderSala(){var at=sorted(["atendendo"]),ws=sorted(["chegou"]),h="",rest=0;
 if(!at.length)$("atend").innerHTML='<div class="empty">Ninguém na cadeira agora.</div>';
 else{var a=at[0],m=pm(a);rest=Math.max(0,m-Math.floor((Date.now()-a.t0)/60000));
-$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+SRV[a.srv].n+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
+$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+(SRV[a.srv]||DEF.corte).n+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
 if(!ws.length)h='<div class="empty">Ninguém aguardando.</div>';
 var acc=rest;
 ws.forEach(function(a,i){var first=(!at.length&&i===0);
-h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+SRV[a.srv].n+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':(!at.length&&i>0?"":""))+'</div>';
+h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+(SRV[a.srv]||DEF.corte).n+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':(!at.length&&i>0?"":""))+'</div>';
 acc+=pm(a)});
 $("espera").innerHTML=h}
 
 function renderCx(){var f=sorted(["finalizado"]),c={corte:0,pers:0,cb:0},rec=0,app=0,loc=0;
-f.forEach(function(a){c[a.srv]++;var v=pv(a);rec+=v;if(a.pago==="app")app+=v;else loc+=v});
+f.forEach(function(a){if(c[a.srv]!=null)c[a.srv]++;var v=pv(a);rec+=v;if(a.pago==="app")app+=v;else loc+=v});
 function k(t,v){return '<div class="card"><div class="mut">'+t+'</div><div class="big">'+v+'</div></div>'}
 $("tot").innerHTML=k("Receita do dia",brl(rec))+k("Atendimentos",f.length);
 $("det").innerHTML='<div class="row"><span>Cortes normais</span><b>'+c.corte+'</b></div><div class="row"><span>Cortes personalizados</span><b>'+c.pers+'</b></div><div class="row"><span>Corte e barba</span><b>'+c.cb+'</b></div><div class="row"><span>Recebido pelo app (Pix)</span><b>'+brl(app)+'</b></div><div class="row"><span>Recebido no local</span><b>'+brl(loc)+'</b></div><div class="row"><span>Faltas e cancelamentos</span><b>'+sorted(["faltou","cancelado"]).length+'</b></div>'}
@@ -242,8 +296,10 @@ if(t.dataset&&t.dataset.t){["ag","sala","cx","svc"].forEach(function(x){$(x).cla
 Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b===t)});render()}});
 
 $("f").addEventListener("submit",function(e){e.preventDefault();
-S.ag.push({id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"});
-save();$("nome").value="";render()});
+var novoAg={id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"};
+S.ag.push(novoAg);
+save();$("nome").value="";render();
+dispararAlertaAgendamento({id:"local-"+novoAg.id,cliente_nome:novoAg.nome,hora:novoAg.hora,status:"agendado"})});
 
 $("fs").addEventListener("submit",function(e){e.preventDefault();var n=$("sn").value.trim();if(!n)return;
 SRV["s"+Date.now()]={n:n,min:+$("sm").value,v:+$("spv").value};save();$("fs").reset();$("svmsg").textContent="";render()});
@@ -259,7 +315,7 @@ function lockUi(){AU=rd();document.body.classList.add('locked');$('lp').value=''
 $('lc').className=AU?'hide':'';$('lp2').required=!AU;$('lb').textContent=AU?'Entrar':'Criar senha';
 $('lkt').textContent=AU?'Digite a senha do administrador para abrir.':'Primeiro acesso: crie a senha do administrador.';
 $('lr').className=AU?'b d':'b d hide';$('lp').autocomplete=AU?'current-password':'new-password'}
-function unlock(){document.body.classList.remove('locked');render()}
+function unlock(){document.body.classList.remove('locked');render();iniciarRealtimeSupabase()}
 function initAuth(){lockUi();
 $('lf').addEventListener('submit',function(e){e.preventDefault();var pw=$('lp').value,m=$('lm');
 if(!AU){if(pw.length<4){m.textContent='Use pelo menos 4 caracteres.';return}if(pw!==$('lp2').value){m.textContent='As senhas não conferem.';return}
@@ -297,7 +353,41 @@ document.addEventListener("change",function(e){var t=e.target,k=t.dataset&&t.dat
 if(f==="n"){var n=t.value.trim();if(!n){t.value=SRV[k].n;return}SRV[k].n=n}
 else{var x=parseFloat(t.value);if(isNaN(x)||x<0||(f==="min"&&x<5)){t.value=SRV[k][f];return}SRV[k][f]=x}
 save();fillSel()});
+
+/* Ligação Supabase + Realtime */
+var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
+var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
+var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+var canalRealtime=null;
+
+function iniciarRealtimeSupabase(){
+  if(!sbClient){$("rt-status").textContent="Supabase: SDK não carregado.";return}
+  $("rt-status").textContent="Supabase: ligado (a verificar barbearia)...";
+  sbClient.rpc("minha_barbearia").then(function(res){
+    if(res.error||!res.data){
+      $("rt-status").textContent="Supabase: conectado (sem sessão auth ativa para barbearia).";
+      return;
+    }
+    var barbeariaId=res.data;
+    $("rt-status").textContent="Supabase: tempo real ativo.";
+    sbClient.from("agendamentos").select("id,cliente_nome,hora,status").eq("barbearia_id",barbeariaId).eq("status","agendado").order("criado_em",{ascending:false}).limit(1).then(function(q){
+      if(q.data&&q.data.length)dispararAlertaAgendamento(q.data[0]);
+    });
+    if(canalRealtime){sbClient.removeChannel(canalRealtime)}
+    canalRealtime=sbClient.channel("painel-agendamentos-"+barbeariaId).on("postgres_changes",{event:"INSERT",schema:"public",table:"agendamentos",filter:"barbearia_id=eq."+barbeariaId},function(payload){
+      if(payload.new&&payload.new.status==="agendado")dispararAlertaAgendamento(payload.new);
+    }).subscribe();
+  });
+}
+
 initAuth();load();$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);$("pxk").value=PIX.k;$("pxn").value=PIX.n;$("pxc").value=PIX.c;render();setInterval(tick,1000);setInterval(function(){if(!$("sala").classList.contains("hide"))renderSala()},30000);
 </script>
 </body>
 </html>
+```[cite: 9, 10, 12]
+
+### Nota rápida sobre o teste
+* Se testares o formulário da própria agenda (`#f`), ele já dispara o alerta a piscar e a vibração na hora[cite: 12].
+* Para testar o evento vindo do Supabase via `criar_agendamento_publico`, lembra-te de que o utilizador autenticado no Supabase precisa de ter o perfil associado à barbearia (`minha_barbearia()`), e no telemóvel a vibração funciona no Android/Chrome/Brave (no iOS Safari a API de vibração é bloqueada pelo sistema)[cite: 10, 12].
+
+Queres que eu também gere uma página `cliente.html` simples que chame `listar_servicos_publico` e `criar_agendamento_publico` para testares o agendamento pelo lado do cliente?
