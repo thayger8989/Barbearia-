@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel da Barbearia (protótipo)</title>
+<style>
+:root{--bg:#eef1f4;--card:#fff;--tx:#14213d;--mut:#5b6678;--bd:#d6dce4;--red:#c8372d;--blue:#1d4e89;--ok:#2e7d4f;--btn:#14213d;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151f;--card:#1a2230;--tx:#eef1f6;--mut:#9aa6ba;--bd:#2c3648;--red:#e4574d;--blue:#5b9be0;--ok:#5cc08a;--btn:#eef1f6;--btnt:#10151f}}
+:root[data-theme="dark"]{--bg:#10151f;--card:#1a2230;--tx:#eef1f6;--mut:#9aa6ba;--bd:#2c3648;--red:#e4574d;--blue:#5b9be0;--ok:#5cc08a;--btn:#eef1f6;--btnt:#10151f}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:640px;margin:0 auto;padding:16px}
+h1{font:700 22px/1.2 Georgia,"Times New Roman",serif;margin:0}
+h2{font:700 17px/1.2 Georgia,serif;margin:20px 0 8px}
+.sub{color:var(--mut);font-size:14px;margin:2px 0 12px}
+.pole{height:10px;border-radius:5px;background:repeating-linear-gradient(135deg,var(--red) 0 12px,var(--card) 12px 24px,var(--blue) 24px 36px,var(--card) 36px 48px);border:1px solid var(--bd);margin:10px 0}
+.free{display:none;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--bd);margin:8px 0;font-weight:600}
+.free b{font:700 22px Georgia,serif;color:var(--red)}
+nav{display:flex;gap:6px;margin:12px 0}
+nav button{flex:1;padding:10px 4px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font-size:14px;font-weight:600;font-family:inherit}
+nav button.on{background:var(--btn);color:var(--btnt);border-color:var(--btn)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.nm{font-weight:700}
+.mut{color:var(--mut);font-size:14px}
+.tag{font-size:13px;padding:2px 8px;border-radius:99px;border:1px solid var(--bd)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+button.b{padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+button.p{background:var(--btn);color:var(--btnt);border-color:var(--btn)}
+button.d{color:var(--red);border-color:var(--red)}
+form{display:grid;gap:8px}
+label{font-size:14px;color:var(--mut);display:grid;gap:3px}
+input,select{padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:16px;font-family:inherit}
+.big{font:700 28px Georgia,serif}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.empty{color:var(--mut);padding:12px 0}
+.hide{display:none}
+.deco{display:none;position:fixed;top:50%;transform:translateY(-50%);width:170px;height:auto;pointer-events:none}
+.deco.l{left:calc(50% - 510px)}
+.deco.r{left:calc(50% + 340px)}
+@media (min-width:1040px){.deco{display:block}}
+.deco .s{stroke:var(--tx);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.deco .c{fill:var(--card)}.deco .g{fill:var(--bg)}.deco .r1{fill:var(--red)}.deco .b1{fill:var(--blue)}.deco .t{stroke-width:2;opacity:.45}
+#lock{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);align-items:center;justify-content:center;padding:16px}
+body.locked #lock{display:flex}
+body.locked>*:not(#lock):not(#ver){display:none}
+#ver{position:fixed;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--mut);opacity:.85;pointer-events:none;z-index:101}
+.lk{width:100%;max-width:360px}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+</style>
+</head>
+<body class="locked">
+<div id="ver"></div>
+<div id="lock">
+<div class="card lk">
+<h1 id="lkn">Painel da Barbearia</h1>
+<p class="sub" id="lkt"></p>
+<form id="lf">
+<label>Senha<input id="lp" type="password" required></label>
+<label id="lc" class="hide">Repita a senha<input id="lp2" type="password" autocomplete="new-password"></label>
+<button class="b p" type="submit" id="lb">Entrar</button>
+</form>
+<p class="mut" id="lm"></p>
+<button class="b d hide" id="lr" type="button">Esqueci a senha (apaga tudo)</button>
+</div>
+</div>
+<svg class="deco l" viewBox="0 0 170 320" aria-hidden="true">
+<rect class="s c" x="25" y="15" width="120" height="205" rx="60"/>
+<rect class="s g" x="36" y="26" width="98" height="183" rx="49"/>
+<path class="s t" d="M62 95 L108 45"/>
+<path class="s t" d="M55 135 L120 62"/>
+<path class="s t" d="M60 175 L118 112"/>
+<path class="s" d="M12 250 H158"/>
+<path class="s" d="M30 250 V268 M140 250 V268"/>
+<rect class="s r1" x="34" y="214" width="16" height="36" rx="4"/>
+<rect class="s c" x="37" y="204" width="10" height="10" rx="2"/>
+<rect class="s b1" x="62" y="228" width="22" height="22" rx="4"/>
+<rect class="s c" x="98" y="241" width="44" height="9" rx="3"/>
+</svg>
+<svg class="deco r" viewBox="0 0 170 320" aria-hidden="true">
+<rect class="s r1" x="52" y="30" width="66" height="28" rx="13"/>
+<rect class="s r1" x="45" y="62" width="80" height="112" rx="18"/>
+<path class="s t" d="M60 85 V150 M85 80 V155 M110 85 V150"/>
+<rect class="s b1" x="22" y="150" width="28" height="11" rx="5"/>
+<rect class="s b1" x="120" y="150" width="28" height="11" rx="5"/>
+<path class="s" d="M36 161 V184 M134 161 V184"/>
+<rect class="s r1" x="34" y="180" width="102" height="30" rx="15"/>
+<rect class="s c" x="77" y="210" width="16" height="52" rx="4"/>
+<ellipse class="s c" cx="85" cy="272" rx="46" ry="11"/>
+<path class="s" d="M118 218 L138 248"/>
+<rect class="s b1" x="126" y="246" width="34" height="9" rx="4"/>
+</svg>
+<div class="row"><h1 id="nomeb">Barbearia Modelo</h1><button class="b" id="sair" type="button">Sair</button></div>
+<p class="sub">Painel do barbeiro. Protótipo para testar as telas e as regras.</p>
+<div class="pole"></div>
+<div class="free" id="free">Novo horário abre em <b id="cd">10:00</b></div>
+<nav id="nav">
+<button data-t="ag" class="on">Agenda</button>
+<button data-t="sala">Sala de espera</button>
+<button data-t="cx">Caixa do dia</button>
+<button data-t="svc">Serviços</button>
+</nav>
+
+<section id="ag">
+<div class="card">
+<form id="f">
+<label>Nome completo<input id="nome" required autocomplete="off"></label>
+<div class="grid">
+<label>Serviço<select id="srv"></select></label>
+<label>Horário<input id="hora" type="time" required></label>
+</div>
+<label>Pagamento<select id="pago"><option value="app">Pago no app (Pix)</option><option value="local">Pagar no local</option></select></label>
+<div id="pixbox" class="hide"></div>
+<button class="b p" type="submit">Agendar cliente</button>
+</form>
+</div>
+<h2>Horários do dia</h2>
+<div id="listaAg"></div>
+</section>
+
+<section id="sala" class="hide">
+<h2>Em atendimento</h2>
+<div id="atend"></div>
+<h2>Aguardando no local</h2>
+<div id="espera"></div>
+<p class="mut">A previsão soma o tempo restante do atendimento atual e o de cada cliente à frente.</p>
+</section>
+
+<section id="svc" class="hide">
+<h2>Dados da barbearia</h2>
+<div class="card">
+<label>Nome da barbearia<input id="nbi" autocomplete="off" maxlength="40" placeholder="Ex.: Barbearia do João"></label>
+</div>
+<h2>Pagamento por Pix</h2>
+<div class="card">
+<label>Chave Pix da barbearia<input id="pxk" autocomplete="off" placeholder="CPF, CNPJ, e-mail, telefone (+55...) ou chave aleatória"></label>
+<div class="grid">
+<label>Nome do recebedor<input id="pxn" autocomplete="off" maxlength="25"></label>
+<label>Cidade<input id="pxc" autocomplete="off" maxlength="15"></label>
+</div>
+</div>
+<h2>Senha do administrador</h2>
+<div class="card">
+<form id="cf">
+<label>Senha atual<input id="ca" type="password" autocomplete="current-password" required></label>
+<label>Nova senha<input id="cn" type="password" autocomplete="new-password" required></label>
+<button class="b p" type="submit">Trocar senha</button>
+<span class="mut" id="cm"></span>
+</form>
+</div>
+<h2>Serviços e valores</h2>
+<div id="listaSv"></div>
+<p class="mut" id="svmsg"></p>
+<div class="card">
+<form id="fs">
+<label>Novo serviço<input id="sn" required autocomplete="off" placeholder="Ex.: Sobrancelha"></label>
+<div class="grid">
+<label>Valor (R$)<input id="spv" type="number" min="0" step="0.5" required></label>
+<label>Duração (min)<input id="sm" type="number" min="5" step="5" required></label>
+</div>
+<button class="b p" type="submit">Adicionar serviço</button>
+</form>
+</div>
+<p class="mut">Mudar um valor vale para os próximos agendamentos. Os já marcados mantêm o valor de quando foram criados.</p>
+</section>
+
+<section id="cx" class="hide">
+<h2>Resumo do dia</h2>
+<div class="grid" id="tot"></div>
+<div class="card" id="det"></div>
+<div class="acts"><button class="b d" id="novo">Começar novo dia</button></div>
+<p class="mut">Relatório em PDF e backup entram na versão com banco de dados.</p>
+</section>
+
+<script>
+var DEF={corte:{n:"Corte",min:50,v:35},pers:{n:"Corte personalizado",min:60,v:45},cb:{n:"Corte e barba",min:90,v:55}};
+var SRV=DEF;
+var PIX={k:"",n:"",c:""};
+var NOME='Barbearia Modelo',VERSAO='1.0';
+var KEY="barb-proto-v1",S={ag:[],livre:0,seq:1};
+function load(){try{var r=localStorage.getItem(KEY);if(r){S=JSON.parse(r);if(S.srv)SRV=S.srv;if(S.pix)PIX=S.pix;if(S.nome)NOME=S.nome}}catch(e){}}
+function save(){S.srv=SRV;S.pix=PIX;S.nome=NOME;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
+function $(i){return document.getElementById(i)}
+function brl(n){return "R$ "+n.toFixed(2).replace(".",",")}
+function pv(a){return a.v!=null?a.v:SRV[a.srv].v}
+function pm(a){return a.min!=null?a.min:SRV[a.srv].min}
+function by(id){return S.ag.filter(function(a){return a.id===id})[0]}
+function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return a.hora<b.hora?-1:1})}
+var LBL={agendado:"Agendado",chegou:"No local",atendendo:"Em atendimento",finalizado:"Finalizado",faltou:"Faltou",cancelado:"Cancelado"};
+
+function seed(){if(S.ag.length)return;
+[["Carlos Mendes","corte","09:00","app"],["João Pedro Silva","cb","09:50","local"],["Marcos Andrade","pers","11:20","app"]].forEach(function(x){S.ag.push({id:S.seq++,nome:x[0],srv:x[1],hora:x[2],pago:x[3],st:"agendado"})});save()}
+
+function setSt(id,st){var a=by(id);if(!a)return;a.st=st;
+if(st==="atendendo")a.t0=Date.now();
+if(st==="finalizado"){S.livre=Date.now()+600000}
+if(st==="faltou"||st==="cancelado"){S.livre=0}
+save();render()}
+
+function btn(txt,id,st,cls){return '<button class="b '+(cls||"")+'" data-id="'+id+'" data-st="'+st+'">'+txt+'</button>'}
+
+function renderAg(){var l=sorted(["agendado","chegou","atendendo","finalizado","faltou","cancelado"]),h="";
+if(!l.length)h='<div class="empty">Nenhum horário marcado. Agende o primeiro cliente acima.</div>';
+l.forEach(function(a){var s=SRV[a.srv],acts="";
+if(a.st==="agendado")acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
+h+='<div class="card"><div class="row"><span class="nm">'+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+s.n+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
+$("listaAg").innerHTML=h}
+
+function renderSala(){var at=sorted(["atendendo"]),ws=sorted(["chegou"]),h="",rest=0;
+if(!at.length)$("atend").innerHTML='<div class="empty">Ninguém na cadeira agora.</div>';
+else{var a=at[0],m=pm(a);rest=Math.max(0,m-Math.floor((Date.now()-a.t0)/60000));
+$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+SRV[a.srv].n+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
+if(!ws.length)h='<div class="empty">Ninguém aguardando.</div>';
+var acc=rest;
+ws.forEach(function(a,i){var first=(!at.length&&i===0);
+h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+SRV[a.srv].n+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':(!at.length&&i>0?"":""))+'</div>';
+acc+=pm(a)});
+$("espera").innerHTML=h}
+
+function renderCx(){var f=sorted(["finalizado"]),c={corte:0,pers:0,cb:0},rec=0,app=0,loc=0;
+f.forEach(function(a){c[a.srv]++;var v=pv(a);rec+=v;if(a.pago==="app")app+=v;else loc+=v});
+function k(t,v){return '<div class="card"><div class="mut">'+t+'</div><div class="big">'+v+'</div></div>'}
+$("tot").innerHTML=k("Receita do dia",brl(rec))+k("Atendimentos",f.length);
+$("det").innerHTML='<div class="row"><span>Cortes normais</span><b>'+c.corte+'</b></div><div class="row"><span>Cortes personalizados</span><b>'+c.pers+'</b></div><div class="row"><span>Corte e barba</span><b>'+c.cb+'</b></div><div class="row"><span>Recebido pelo app (Pix)</span><b>'+brl(app)+'</b></div><div class="row"><span>Recebido no local</span><b>'+brl(loc)+'</b></div><div class="row"><span>Faltas e cancelamentos</span><b>'+sorted(["faltou","cancelado"]).length+'</b></div>'}
+
+function aplicaNome(){$('nomeb').textContent=NOME;$('lkn').textContent=NOME;document.title=NOME+' - Painel';$('ver').textContent='v'+VERSAO}
+function render(){aplicaNome();fillSel();renderPix();renderAg();renderSala();renderCx();renderSv();tick()}
+function tick(){var left=Math.ceil((S.livre-Date.now())/1000),b=$("free");
+if(left>0){b.style.display="block";$("cd").textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0")}else b.style.display="none"}
+
+document.addEventListener("click",function(e){var t=e.target;
+if(t.dataset&&t.dataset.cp){var tx=t.dataset.cp==="k"?PIX.k.trim():brcode(SRV[$("srv").value].v);cp(tx,t);return}
+if(t.dataset&&t.dataset.del){var dk=t.dataset.del,m=$("svmsg");
+if(S.ag.some(function(a){return a.srv===dk})){m.textContent="Este serviço já tem agendamentos. Mude o nome ou o valor em vez de remover.";return}
+if(Object.keys(SRV).length<2){m.textContent="Mantenha pelo menos um serviço.";return}
+delete SRV[dk];m.textContent="";save();render();return}
+if(t.dataset&&t.dataset.st){setSt(+t.dataset.id,t.dataset.st);return}
+if(t.dataset&&t.dataset.t){["ag","sala","cx","svc"].forEach(function(x){$(x).classList.toggle("hide",x!==t.dataset.t)});
+Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b===t)});render()}});
+
+$("f").addEventListener("submit",function(e){e.preventDefault();
+S.ag.push({id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"});
+save();$("nome").value="";render()});
+
+$("fs").addEventListener("submit",function(e){e.preventDefault();var n=$("sn").value.trim();if(!n)return;
+SRV["s"+Date.now()]={n:n,min:+$("sm").value,v:+$("spv").value};save();$("fs").reset();$("svmsg").textContent="";render()});
+$("pago").addEventListener("change",renderPix);$("srv").addEventListener("change",renderPix);
+["pxk","pxn","pxc"].forEach(function(id){$(id).addEventListener("input",function(){PIX[id==="pxk"?"k":id==="pxn"?"n":"c"]=this.value;save();renderPix()})});
+var AK='barb-auth-v1',AU=null,fails=0;
+function rd(){try{var r=localStorage.getItem(AK);return r?JSON.parse(r):null}catch(e){return null}}
+function cyr(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(16)}
+function hex(a){return Array.prototype.map.call(a,function(x){return x.toString(16).padStart(2,'0')}).join('')}
+function hs(salt,pw){var t=salt+':'+pw;if(window.crypto&&crypto.subtle&&window.TextEncoder){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return hex(new Uint8Array(b))})}return Promise.resolve(cyr(t))}
+function rnd(){var a=new Uint8Array(16);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(var i=0;i<16;i++)a[i]=Math.floor(Math.random()*256);return hex(a)}
+function lockUi(){AU=rd();document.body.classList.add('locked');$('lp').value='';$('lp2').value='';$('lm').textContent='';
+$('lc').className=AU?'hide':'';$('lp2').required=!AU;$('lb').textContent=AU?'Entrar':'Criar senha';
+$('lkt').textContent=AU?'Digite a senha do administrador para abrir.':'Primeiro acesso: crie a senha do administrador.';
+$('lr').className=AU?'b d':'b d hide';$('lp').autocomplete=AU?'current-password':'new-password'}
+function unlock(){document.body.classList.remove('locked');render()}
+function initAuth(){lockUi();
+$('lf').addEventListener('submit',function(e){e.preventDefault();var pw=$('lp').value,m=$('lm');
+if(!AU){if(pw.length<4){m.textContent='Use pelo menos 4 caracteres.';return}if(pw!==$('lp2').value){m.textContent='As senhas não conferem.';return}
+var s=rnd();hs(s,pw).then(function(h){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h}))}catch(x){}unlock()});return}
+hs(AU.s,pw).then(function(h){if(h===AU.h){fails=0;unlock()}else{fails++;$('lp').value='';m.textContent='Senha incorreta.';if(fails>=3){$('lb').disabled=true;m.textContent='Senha incorreta. Aguarde 10 segundos.';setTimeout(function(){$('lb').disabled=false;fails=0;m.textContent=''},10000)}}})});
+$('sair').addEventListener('click',lockUi);
+var arm2=false;$('lr').addEventListener('click',function(){var b=$('lr');if(!arm2){arm2=true;b.textContent='Tem certeza? Isso apaga todos os dados. Toque de novo';setTimeout(function(){arm2=false;b.textContent='Esqueci a senha (apaga tudo)'},5000);return}
+try{localStorage.removeItem(AK);localStorage.removeItem(KEY)}catch(x){}
+location.reload()});
+$('cf').addEventListener('submit',function(e){e.preventDefault();var a=rd(),m=$('cm'),n=$('cn').value;if(!a)return;if(n.length<4){m.textContent='Use pelo menos 4 caracteres.';return}
+hs(a.s,$('ca').value).then(function(h){if(h!==a.h){m.textContent='Senha atual incorreta.';return}var s=rnd();hs(s,n).then(function(h2){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h2}))}catch(x){}$('cf').reset();m.textContent='Senha trocada.'})})})}
+$('nbi').addEventListener('input',function(){NOME=this.value.trim()||'Barbearia Modelo';save();aplicaNome()});
+var armed=false;
+$("novo").addEventListener("click",function(){var b=$("novo");
+if(!armed){armed=true;b.textContent="Tem certeza? Toque de novo para apagar";setTimeout(function(){armed=false;b.textContent="Começar novo dia"},4000);return}
+S.ag=[];S.livre=0;armed=false;b.textContent="Começar novo dia";save();render()});
+
+function crc(s){var c=0xFFFF;for(var i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(var j=0;j<8;j++)c=(c&0x8000)?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF}return c.toString(16).toUpperCase().padStart(4,"0")}
+function tl(id,v){return id+String(v.length).padStart(2,"0")+v}
+function clean(t,n){return t.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9 ]/g,"").toUpperCase().trim().slice(0,n)}
+function brcode(v){var p=tl("00","01")+tl("26",tl("00","br.gov.bcb.pix")+tl("01",PIX.k.trim()))+tl("52","0000")+tl("53","986")+(v>0?tl("54",v.toFixed(2)):"")+tl("58","BR")+tl("59",clean(PIX.n,25)||"BARBEARIA")+tl("60",clean(PIX.c,15)||"BRASIL")+tl("62",tl("05","***"))+"6304";return p+crc(p)}
+function renderPix(){var b=$("pixbox");if($("pago").value!=="app"){b.className="hide";return}
+b.className="card";
+if(!PIX.k.trim()){b.innerHTML='<div class="mut">Cadastre a chave Pix na aba Serviços para ela aparecer aqui.</div>';return}
+var s=SRV[$("srv").value],v=s?s.v:0;
+b.innerHTML='<div class="mut">Chave Pix para pagamento</div><div class="nm">'+esc(PIX.k)+'</div><div class="mut">Valor: '+brl(v)+'</div><div class="acts"><button type="button" class="b" data-cp="k">Copiar chave</button><button type="button" class="b p" data-cp="b">Copiar Pix com valor</button></div>'}
+function cp(tx,btn){var old=btn.textContent;function ok(){btn.textContent="Copiado";setTimeout(function(){btn.textContent=old},1500)}
+function fb(){var a=document.createElement("textarea");a.value=tx;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){btn.textContent="Não foi possível copiar"}document.body.removeChild(a)}
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(ok,fb)}else fb()}
+function fillSel(){var s=$("srv"),cur=s.value;s.innerHTML="";Object.keys(SRV).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=SRV[k].n+" ("+brl(SRV[k].v)+")";s.appendChild(o)});if(SRV[cur])s.value=cur}
+function renderSv(){var h="";Object.keys(SRV).forEach(function(k){var s=SRV[k];
+h+='<div class="card"><label>Nome<input data-k="'+k+'" data-f="n" value="'+esc(s.n).replace(/"/g,"&quot;")+'"></label><div class="grid"><label>Valor (R$)<input type="number" min="0" step="0.5" data-k="'+k+'" data-f="v" value="'+s.v+'"></label><label>Duração (min)<input type="number" min="5" step="5" data-k="'+k+'" data-f="min" value="'+s.min+'"></label></div><div class="acts"><button class="b d" data-del="'+k+'">Remover</button></div></div>'});
+$("listaSv").innerHTML=h}
+document.addEventListener("change",function(e){var t=e.target,k=t.dataset&&t.dataset.k;if(!k||!SRV[k])return;var f=t.dataset.f;
+if(f==="n"){var n=t.value.trim();if(!n){t.value=SRV[k].n;return}SRV[k].n=n}
+else{var x=parseFloat(t.value);if(isNaN(x)||x<0||(f==="min"&&x<5)){t.value=SRV[k][f];return}SRV[k][f]=x}
+save();fillSel()});
+initAuth();load();$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);$("pxk").value=PIX.k;$("pxn").value=PIX.n;$("pxc").value=PIX.c;render();setInterval(tick,1000);setInterval(function(){if(!$("sala").classList.contains("hide"))renderSala()},30000);
+</script>
+</body>
+</html>
