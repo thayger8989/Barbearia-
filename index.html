@@ -384,10 +384,3 @@ initAuth();load();$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);$("pxk").va
 </script>
 </body>
 </html>
-```[cite: 9, 10, 12]
-
-### Nota rápida sobre o teste
-* Se testares o formulário da própria agenda (`#f`), ele já dispara o alerta a piscar e a vibração na hora[cite: 12].
-* Para testar o evento vindo do Supabase via `criar_agendamento_publico`, lembra-te de que o utilizador autenticado no Supabase precisa de ter o perfil associado à barbearia (`minha_barbearia()`), e no telemóvel a vibração funciona no Android/Chrome/Brave (no iOS Safari a API de vibração é bloqueada pelo sistema)[cite: 10, 12].
-
-Queres que eu também gere uma página `cliente.html` simples que chame `listar_servicos_publico` e `criar_agendamento_publico` para testares o agendamento pelo lado do cliente?
