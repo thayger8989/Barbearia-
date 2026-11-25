@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Painel da Barbearia (protótipo)</title>
+<title>Painel da Barbearia</title>
 <style>
 :root{--bg:#eef1f4;--card:#fff;--tx:#14213d;--mut:#5b6678;--bd:#d6dce4;--red:#c8372d;--blue:#1d4e89;--ok:#2e7d4f;--btn:#14213d;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151f;--card:#1a2230;--tx:#eef1f6;--mut:#9aa6ba;--bd:#2c3648;--red:#e4574d;--blue:#5b9be0;--ok:#5cc08a;--btn:#eef1f6;--btnt:#10151f}}
@@ -66,14 +66,13 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <div id="lock">
 <div class="card lk">
 <h1 id="lkn">Painel da Barbearia</h1>
-<p class="sub" id="lkt"></p>
+<p class="sub" id="lkt">Entre com o e-mail e senha cadastrados no painel.</p>
 <form id="lf">
-<label>Senha<input id="lp" type="password" required></label>
-<label id="lc" class="hide">Repita a senha<input id="lp2" type="password" autocomplete="new-password"></label>
+<label>E-mail<input id="le" type="email" autocomplete="email" required></label>
+<label>Senha<input id="lp" type="password" autocomplete="current-password" required></label>
 <button class="b p" type="submit" id="lb">Entrar</button>
 </form>
 <p class="mut" id="lm"></p>
-<button class="b d hide" id="lr" type="button">Esqueci a senha (apaga tudo)</button>
 </div>
 </div>
 <svg class="deco l" viewBox="0 0 170 320" aria-hidden="true">
@@ -102,8 +101,8 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <path class="s" d="M118 218 L138 248"/>
 <rect class="s b1" x="126" y="246" width="34" height="9" rx="4"/>
 </svg>
-<div class="row"><h1 id="nomeb">Barbearia Modelo</h1><button class="b" id="sair" type="button">Sair</button></div>
-<p class="sub">Painel do barbeiro. Protótipo para testar as telas e as regras.</p>
+<div class="row"><h1 id="nomeb">Barbearia</h1><button class="b" id="sair" type="button">Sair</button></div>
+<p class="sub">Painel do barbeiro e administração.</p>
 <p class="mut" id="rt-status">Supabase: a aguardar ligação...</p>
 <div class="pole"></div>
 <div class="free" id="free">Novo horário abre em <b id="cd">10:00</b></div>
@@ -158,15 +157,7 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <label>Nome do recebedor<input id="pxn" autocomplete="off" maxlength="25"></label>
 <label>Cidade<input id="pxc" autocomplete="off" maxlength="15"></label>
 </div>
-</div>
-<h2>Senha do administrador</h2>
-<div class="card">
-<form id="cf">
-<label>Senha atual<input id="ca" type="password" autocomplete="current-password" required></label>
-<label>Nova senha<input id="cn" type="password" autocomplete="new-password" required></label>
-<button class="b p" type="submit">Trocar senha</button>
-<span class="mut" id="cm"></span>
-</form>
+<div class="acts"><button class="b p" id="salvar-barbearia" type="button">Salvar dados da barbearia</button><span class="mut" id="bmsg"></span></div>
 </div>
 <h2>Serviços e valores</h2>
 <div id="listaSv"></div>
@@ -189,18 +180,24 @@ body.locked>*:not(#lock):not(#ver){display:none}
 <div class="grid" id="tot"></div>
 <div class="card" id="det"></div>
 <div class="acts"><button class="b d" id="novo">Começar novo dia</button></div>
-<p class="mut">Relatório em PDF e backup entram na versão com banco de dados.</p>
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-var DEF={corte:{n:"Corte",min:50,v:35},pers:{n:"Corte personalizado",min:60,v:45},cb:{n:"Corte e barba",min:90,v:55}};
-var SRV=DEF;
+var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
+var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
+var BARBEARIA_URL=new URLSearchParams(window.location.search).get("barbearia")||"";
+var BARBEARIA_ID="";
+var VERSAO="1.6";
+
+var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+var canalRealtime=null;
+var mapaServicosDb={};
+var SRV={};
 var PIX={k:"",n:"",c:""};
-var NOME='Barbearia Modelo',VERSAO='1.5';
-var KEY="barb-proto-v1",S={ag:[],livre:0,seq:1};
-function load(){try{var r=localStorage.getItem(KEY);if(r){S=JSON.parse(r);if(S.srv)SRV=S.srv;if(S.pix)PIX=S.pix;if(S.nome)NOME=S.nome}}catch(e){}}
-function save(){S.srv=SRV;S.pix=PIX;S.nome=NOME;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var NOME="Barbearia";
+var S={ag:[],livre:0,seq:1};
+
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML}
 function $(i){return document.getElementById(i)}
 function brl(n){return "R$ "+Number(n||0).toFixed(2).replace(".",",")}
@@ -264,41 +261,41 @@ function setSt(id,st){
     if(st==="finalizado"){upd.finalizado_em=new Date().toISOString();upd.pago=true}
     sbClient.from("agendamentos").update(upd).eq("id",a.db_id).then(function(){});
   }
-  save();render();
+  render();
 }
 
 function btn(txt,id,st,cls){return '<button class="b '+(cls||"")+'" data-id="'+id+'" data-st="'+st+'">'+txt+'</button>'}
 
 function renderAg(){var l=sorted(["agendado","chegou","atendendo","finalizado","faltou","cancelado"]),h="";
-if(!l.length)h='<div class="empty">Nenhum horário marcado. Agende o primeiro cliente acima.</div>';
-l.forEach(function(a){var s=SRV[a.srv]||DEF.corte,acts="";
+if(!l.length)h='<div class="empty">Nenhum horário marcado.</div>';
+l.forEach(function(a){var acts="";
 if(a.st==="agendado")acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
-h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+(a.srv_nome||s.n)+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
+h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+esc(a.srv_nome||"Serviço")+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+(acts?'<div class="acts">'+acts+'</div>':"")+'</div>'});
 $("listaAg").innerHTML=h}
 
 function renderAgendados(){var l=sorted(["agendado"]),h="";
 if(!l.length)h='<div class="empty">Nenhum agendamento pendente na aba Agendados.</div>';
-l.forEach(function(a){var s=SRV[a.srv]||DEF.corte;
+l.forEach(function(a){
 var acts=btn("Cliente chegou",a.id,"chegou","p")+btn("Faltou",a.id,"faltou")+btn("Cancelar",a.id,"cancelado","d");
-h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+(a.srv_nome||s.n)+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+'<div class="acts">'+acts+'</div></div>'});
+h+='<div class="card"><div class="row"><span class="nm">'+(a.data?a.data+" · ":"")+a.hora+" · "+esc(a.nome)+'</span><span class="tag">'+LBL[a.st]+'</span></div><div class="mut">'+esc(a.srv_nome||"Serviço")+" · "+brl(pv(a))+' · <span class="tag '+(a.pago==="app"?"ok":"")+'">'+(a.pago==="app"?"Pago no app":"Pagar no local")+'</span></div>'+(a.tel?'<div class="mut">WhatsApp: '+esc(a.tel)+'</div>':'')+'<div class="acts">'+acts+'</div></div>'});
 $("listaAgendados").innerHTML=h}
 
 function renderSala(){var at=sorted(["atendendo"]),ws=sorted(["chegou"]),h="",rest=0;
 if(!at.length)$("atend").innerHTML='<div class="empty">Ninguém na cadeira agora.</div>';
-else{var a=at[0],m=pm(a);rest=Math.max(0,m-Math.floor((Date.now()-a.t0)/60000));
-$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+(a.srv_nome||(SRV[a.srv]||DEF.corte).n)+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
+else{var a=at[0],m=pm(a);rest=Math.max(0,m-Math.floor((Date.now()-(a.t0||Date.now()))/60000));
+$("atend").innerHTML='<div class="card"><div class="row"><span class="nm">'+esc(a.nome)+'</span><span class="tag">'+esc(a.srv_nome||"Serviço")+'</span></div><div class="mut">Tempo restante estimado: '+rest+' min</div><div class="acts">'+btn("Finalizou",a.id,"finalizado","p")+'</div></div>'}
 if(!ws.length)h='<div class="empty">Ninguém aguardando.</div>';
 var acc=rest;
 ws.forEach(function(a,i){var first=(!at.length&&i===0);
-h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+(a.srv_nome||(SRV[a.srv]||DEF.corte).n)+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':"")+'</div>';
+h+='<div class="card"><div class="row"><span class="nm">'+(i+1)+". "+esc(a.nome)+'</span><span class="tag">'+esc(a.srv_nome||"Serviço")+'</span></div><div class="mut">Agendado para '+a.hora+" · espera estimada: "+(first?"agora":acc+" min")+'</div>'+(first?'<div class="acts">'+btn("Iniciar atendimento",a.id,"atendendo","p")+'</div>':"")+'</div>';
 acc+=pm(a)});
 $("espera").innerHTML=h}
 
-function renderCx(){var f=sorted(["finalizado"]),c={corte:0,pers:0,cb:0},rec=0,app=0,loc=0;
-f.forEach(function(a){if(c[a.srv]!=null)c[a.srv]++;var v=pv(a);rec+=v;if(a.pago==="app")app+=v;else loc+=v});
+function renderCx(){var f=sorted(["finalizado"]),rec=0,app=0,loc=0;
+f.forEach(function(a){var v=pv(a);rec+=v;if(a.pago==="app")app+=v;else loc+=v});
 function k(t,v){return '<div class="card"><div class="mut">'+t+'</div><div class="big">'+v+'</div></div>'}
 $("tot").innerHTML=k("Receita do dia",brl(rec))+k("Atendimentos",f.length);
-$("det").innerHTML='<div class="row"><span>Cortes normais</span><b>'+c.corte+'</b></div><div class="row"><span>Cortes personalizados</span><b>'+c.pers+'</b></div><div class="row"><span>Corte e barba</span><b>'+c.cb+'</b></div><div class="row"><span>Recebido pelo app (Pix)</span><b>'+brl(app)+'</b></div><div class="row"><span>Recebido no local</span><b>'+brl(loc)+'</b></div><div class="row"><span>Faltas e cancelamentos</span><b>'+sorted(["faltou","cancelado"]).length+'</b></div>'}
+$("det").innerHTML='<div class="row"><span>Recebido pelo app (Pix)</span><b>'+brl(app)+'</b></div><div class="row"><span>Recebido no local</span><b>'+brl(loc)+'</b></div><div class="row"><span>Faltas e cancelamentos</span><b>'+sorted(["faltou","cancelado"]).length+'</b></div>'}
 
 function aplicaNome(){$('nomeb').textContent=NOME;$('lkn').textContent=NOME;document.title=NOME+' - Painel';$('ver').textContent='v'+VERSAO}
 function render(){aplicaNome();fillSel();renderPix();renderAg();renderAgendados();renderSala();renderCx();renderSv();tick()}
@@ -306,56 +303,90 @@ function tick(){var left=Math.ceil((S.livre-Date.now())/1000),b=$("free");
 if(left>0){b.style.display="block";$("cd").textContent=String(Math.floor(left/60)).padStart(2,"0")+":"+String(left%60).padStart(2,"0")}else b.style.display="none"}
 
 document.addEventListener("click",function(e){var t=e.target;
-if(t.dataset&&t.dataset.cp){var tx=t.dataset.cp==="k"?PIX.k.trim():brcode(SRV[$("srv").value].v);cp(tx,t);return}
-if(t.dataset&&t.dataset.del){var dk=t.dataset.del,m=$("svmsg");
-if(S.ag.some(function(a){return a.srv===dk})){m.textContent="Este serviço já tem agendamentos. Mude o nome ou o valor em vez de remover.";return}
-if(Object.keys(SRV).length<2){m.textContent="Mantenha pelo menos um serviço.";return}
-delete SRV[dk];m.textContent="";save();render();return}
+if(t.dataset&&t.dataset.cp){var s=SRV[$("srv").value];var tx=t.dataset.cp==="k"?PIX.k.trim():brcode(s?s.v:0);cp(tx,t);return}
+if(t.dataset&&t.dataset.del){
+  var dk=t.dataset.del,m=$("svmsg");
+  if(!sbClient||!BARBEARIA_ID)return;
+  sbClient.from("servicos").update({ativo:false}).eq("id",dk).eq("barbearia_id",BARBEARIA_ID).then(function(r){
+    if(r.error){m.textContent="Erro ao desativar serviço: "+r.error.message;return}
+    delete SRV[dk];m.textContent="Serviço desativado.";render();
+  });
+  return;
+}
 if(t.dataset&&t.dataset.st){setSt(+t.dataset.id,t.dataset.st);return}
 if(t.dataset&&t.dataset.t){["ag","agendados","sala","cx","svc"].forEach(function(x){$(x).classList.toggle("hide",x!==t.dataset.t)});
 Array.prototype.forEach.call($("nav").children,function(b){b.classList.toggle("on",b===t)});render()}});
 
 $("f").addEventListener("submit",function(e){e.preventDefault();
-var novoAg={id:S.seq++,nome:$("nome").value.trim(),srv:$("srv").value,srv_nome:SRV[$("srv").value].n,v:SRV[$("srv").value].v,min:SRV[$("srv").value].min,hora:$("hora").value,pago:$("pago").value,st:"agendado"};
-S.ag.push(novoAg);
-save();$("nome").value="";render();
-dispararAlertaAgendamento({id:"local-"+novoAg.id,cliente_nome:novoAg.nome,hora:novoAg.hora,status:"agendado"})});
+if(!sbClient||!BARBEARIA_ID)return;
+var srvKey=$("srv").value;
+var srvObj=SRV[srvKey];
+if(!srvObj)return;
+var clienteNome=$("nome").value.trim();
+var horaVal=$("hora").value;
+var pagoVal=$("pago").value;
+var hoje=new Date().toISOString().slice(0,10);
 
-$("fs").addEventListener("submit",function(e){e.preventDefault();var n=$("sn").value.trim();if(!n)return;
-SRV["s"+Date.now()]={n:n,min:+$("sm").value,v:+$("spv").value};save();$("fs").reset();$("svmsg").textContent="";render()});
+sbClient.from("agendamentos").insert({
+  barbearia_id:BARBEARIA_ID,
+  servico_id:srvKey,
+  cliente_nome:clienteNome,
+  data:hoje,
+  hora:horaVal,
+  valor:srvObj.v,
+  duracao_min:srvObj.min,
+  pagamento:pagoVal,
+  pago:pagoVal==="app",
+  status:"agendado"
+}).select().single().then(function(r){
+  if(r.error){alert("Erro ao agendar: "+r.error.message);return}
+  $("nome").value="";
+  sincronizarAgendamentoNaLista(r.data);
+  dispararAlertaAgendamento({id:r.data.id,cliente_nome:r.data.cliente_nome,hora:r.data.hora,status:"agendado"});
+});
+});
+
+$("fs").addEventListener("submit",function(e){e.preventDefault();
+if(!sbClient||!BARBEARIA_ID)return;
+var n=$("sn").value.trim();if(!n)return;
+sbClient.from("servicos").insert({
+  barbearia_id:BARBEARIA_ID,
+  nome:n,
+  valor:+$("spv").value,
+  duracao_min:+$("sm").value,
+  ativo:true
+}).select().single().then(function(r){
+  if(r.error){$("svmsg").textContent="Erro ao adicionar serviço: "+r.error.message;return}
+  mapaServicosDb[r.data.id]=r.data;
+  SRV[r.data.id]={n:r.data.nome,min:r.data.duracao_min,v:Number(r.data.valor)};
+  $("fs").reset();$("svmsg").textContent="Serviço salvo no banco.";render();
+});
+});
+
+$("salvar-barbearia").addEventListener("click",function(){
+  if(!sbClient||!BARBEARIA_ID)return;
+  var novoNome=$("nbi").value.trim()||"Barbearia";
+  var novaChave=$("pxk").value.trim();
+  var novoRecebedor=$("pxn").value.trim();
+  var novaCidade=$("pxc").value.trim();
+  $("bmsg").textContent="Salvando...";
+  sbClient.from("barbearias").update({
+    nome:novoNome,
+    pix_chave:novaChave,
+    pix_nome:novoRecebedor,
+    pix_cidade:novaCidade
+  }).eq("id",BARBEARIA_ID).then(function(r){
+    if(r.error){$("bmsg").textContent="Erro: "+r.error.message;return}
+    NOME=novoNome;
+    PIX={k:novaChave,n:novoRecebedor,c:novaCidade};
+    aplicaNome();renderPix();
+    $("bmsg").textContent="Salvo!";
+    setTimeout(function(){$("bmsg").textContent=""},2500);
+  });
+});
+
 $("pago").addEventListener("change",renderPix);$("srv").addEventListener("change",renderPix);
-["pxk","pxn","pxc"].forEach(function(id){$(id).addEventListener("input",function(){PIX[id==="pxk"?"k":id==="pxn"?"n":"c"]=this.value;save();renderPix()})});
-
-var AK='barb-auth-v1',SK='barb-session-v1',AU=null,fails=0;
-function rd(){try{var r=localStorage.getItem(AK);return r?JSON.parse(r):null}catch(e){return null}}
-function setSessaoAtiva(ativo){try{if(ativo)localStorage.setItem(SK,'1');else localStorage.removeItem(SK)}catch(e){}}
-function temSessaoAtiva(){try{return localStorage.getItem(SK)==='1'}catch(e){return false}}
-function cyr(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return(4294967296*(2097151&h2)+(h1>>>0)).toString(16)}
-function hex(a){return Array.prototype.map.call(a,function(x){return x.toString(16).padStart(2,'0')}).join('')}
-function hs(salt,pw){var t=salt+':'+pw;if(window.crypto&&crypto.subtle&&window.TextEncoder){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(t)).then(function(b){return hex(new Uint8Array(b))})}return Promise.resolve(cyr(t))}
-function rnd(){var a=new Uint8Array(16);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);else for(var i=0;i<16;i++)a[i]=Math.floor(Math.random()*256);return hex(a)}
-function lockUi(){setSessaoAtiva(false);AU=rd();document.body.classList.add('locked');$('lp').value='';$('lp2').value='';$('lm').textContent='';
-$('lc').className=AU?'hide':'';$('lp2').required=!AU;$('lb').textContent=AU?'Entrar':'Criar senha';
-$('lkt').textContent=AU?'Digite a senha do administrador para abrir.':'Primeiro acesso: crie a senha do administrador.';
-$('lr').className=AU?'b d':'b d hide';$('lp').autocomplete=AU?'current-password':'new-password'}
-function unlock(){setSessaoAtiva(true);document.body.classList.remove('locked');render();iniciarRealtimeSupabase()}
-function initAuth(){AU=rd();if(AU&&temSessaoAtiva()){unlock()}else{lockUi()}
-$('lf').addEventListener('submit',function(e){e.preventDefault();var pw=$('lp').value,m=$('lm');
-if(!AU){if(pw.length<4){m.textContent='Use pelo menos 4 caracteres.';return}if(pw!==$('lp2').value){m.textContent='As senhas não conferem.';return}
-var s=rnd();hs(s,pw).then(function(h){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h}))}catch(x){}unlock()});return}
-hs(AU.s,pw).then(function(h){if(h===AU.h){fails=0;unlock()}else{fails++;$('lp').value='';m.textContent='Senha incorreta.';if(fails>=3){$('lb').disabled=true;m.textContent='Senha incorreta. Aguarde 10 segundos.';setTimeout(function(){$('lb').disabled=false;fails=0;m.textContent=''},10000)}}})});
-$('sair').addEventListener('click',lockUi);
-var arm2=false;$('lr').addEventListener('click',function(){var b=$('lr');if(!arm2){arm2=true;b.textContent='Tem certeza? Isso apaga todos os dados. Toque de novo';setTimeout(function(){arm2=false;b.textContent='Esqueci a senha (apaga tudo)'},5000);return}
-try{localStorage.removeItem(AK);localStorage.removeItem(KEY);localStorage.removeItem(SK)}catch(x){}
-location.reload()});
-$('cf').addEventListener('submit',function(e){e.preventDefault();var a=rd(),m=$('cm'),n=$('cn').value;if(!a)return;if(n.length<4){m.textContent='Use pelo menos 4 caracteres.';return}
-hs(a.s,$('ca').value).then(function(h){if(h!==a.h){m.textContent='Senha atual incorreta.';return}var s=rnd();hs(s,n).then(function(h2){try{localStorage.setItem(AK,JSON.stringify({s:s,h:h2}))}catch(x){}$('cf').reset();m.textContent='Senha trocada.'})})})}
-
-$('nbi').addEventListener('input',function(){NOME=this.value.trim()||'Barbearia Modelo';save();aplicaNome()});
-var armed=false;
-$("novo").addEventListener("click",function(){var b=$("novo");
-if(!armed){armed=true;b.textContent="Tem certeza? Toque de novo para apagar";setTimeout(function(){armed=false;b.textContent="Começar novo dia"},4000);return}
-S.ag=[];S.livre=0;armed=false;b.textContent="Começar novo dia";save();render()});
+["pxk","pxn","pxc"].forEach(function(id){$(id).addEventListener("input",function(){PIX[id==="pxk"?"k":id==="pxn"?"n":"c"]=this.value;renderPix()})});
 
 function crc(s){var c=0xFFFF;for(var i=0;i<s.length;i++){c^=s.charCodeAt(i)<<8;for(var j=0;j<8;j++)c=(c&0x8000)?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF}return c.toString(16).toUpperCase().padStart(4,"0")}
 function tl(id,v){return id+String(v.length).padStart(2,"0")+v}
@@ -371,21 +402,19 @@ function fb(){var a=document.createElement("textarea");a.value=tx;document.body.
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(ok,fb)}else fb()}
 function fillSel(){var s=$("srv"),cur=s.value;s.innerHTML="";Object.keys(SRV).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=SRV[k].n+" ("+brl(SRV[k].v)+")";s.appendChild(o)});if(SRV[cur])s.value=cur}
 function renderSv(){var h="";Object.keys(SRV).forEach(function(k){var s=SRV[k];
-h+='<div class="card"><label>Nome<input data-k="'+k+'" data-f="n" value="'+esc(s.n).replace(/"/g,"&quot;")+'"></label><div class="grid"><label>Valor (R$)<input type="number" min="0" step="0.5" data-k="'+k+'" data-f="v" value="'+s.v+'"></label><label>Duração (min)<input type="number" min="5" step="5" data-k="'+k+'" data-f="min" value="'+s.min+'"></label></div><div class="acts"><button class="b d" data-del="'+k+'">Remover</button></div></div>'});
+h+='<div class="card"><label>Nome<input data-k="'+k+'" data-f="n" value="'+esc(s.n).replace(/"/g,"&quot;")+'"></label><div class="grid"><label>Valor (R$)<input type="number" min="0" step="0.5" data-k="'+k+'" data-f="v" value="'+s.v+'"></label><label>Duração (min)<input type="number" min="5" step="5" data-k="'+k+'" data-f="min" value="'+s.min+'"></label></div><div class="acts"><button class="b d" data-del="'+k+'">Desativar</button></div></div>'});
 $("listaSv").innerHTML=h}
-document.addEventListener("change",function(e){var t=e.target,k=t.dataset&&t.dataset.k;if(!k||!SRV[k])return;var f=t.dataset.f;
+document.addEventListener("change",function(e){var t=e.target,k=t.dataset&&t.dataset.k;if(!k||!SRV[k]||!sbClient||!BARBEARIA_ID)return;
+var f=t.dataset.f;
 if(f==="n"){var n=t.value.trim();if(!n){t.value=SRV[k].n;return}SRV[k].n=n}
 else{var x=parseFloat(t.value);if(isNaN(x)||x<0||(f==="min"&&x<5)){t.value=SRV[k][f];return}SRV[k][f]=x}
-save();fillSel()});
+sbClient.from("servicos").update({nome:SRV[k].n,valor:SRV[k].v,duracao_min:SRV[k].min}).eq("id",k).eq("barbearia_id",BARBEARIA_ID).then(function(){});
+fillSel()});
 
-/* Ligação Supabase + Realtime (modo demonstração / pré-online) */
-var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
-var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
-var BARBEARIA_ID=new URLSearchParams(window.location.search).get("barbearia")||"c59372f5-536c-4127-bab0-7ac1c3950135";
-
-var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
-var canalRealtime=null;
-var mapaServicosDb={};
+var armed=false;
+$("novo").addEventListener("click",function(){var b=$("novo");
+if(!armed){armed=true;b.textContent="Tem certeza? Toque de novo";setTimeout(function(){armed=false;b.textContent="Começar novo dia"},4000);return}
+S.ag=[];S.livre=0;armed=false;b.textContent="Começar novo dia";render()});
 
 function sincronizarAgendamentoNaLista(ag){
   if(!ag||!ag.id)return;
@@ -401,7 +430,7 @@ function sincronizarAgendamentoNaLista(ag){
       db_id:ag.id,
       nome:ag.cliente_nome||"Cliente",
       tel:ag.cliente_telefone||"",
-      srv:"corte",
+      srv:ag.servico_id||"srv",
       srv_nome:nomeServico,
       v:valorServico,
       min:duracaoServico,
@@ -416,8 +445,34 @@ function sincronizarAgendamentoNaLista(ag){
     existente.v=valorServico;
     existente.min=duracaoServico;
   }
-  save();
   render();
+}
+
+function carregarDadosBarbearia(){
+  $("rt-status").textContent="Supabase: carregando barbearia...";
+  sbClient.from("barbearias").select("id,nome,pix_chave,pix_nome,pix_cidade").eq("id",BARBEARIA_ID).single().then(function(r){
+    if(!r.error&&r.data){
+      NOME=r.data.nome||"Barbearia";
+      PIX={k:r.data.pix_chave||"",n:r.data.pix_nome||"",c:r.data.pix_cidade||""};
+      $("nbi").value=NOME;
+      $("pxk").value=PIX.k;
+      $("pxn").value=PIX.n;
+      $("pxc").value=PIX.c;
+    }
+    aplicaNome();renderPix();
+  });
+
+  sbClient.from("servicos").select("id,nome,valor,duracao_min").eq("barbearia_id",BARBEARIA_ID).eq("ativo",true).then(function(resSrv){
+    SRV={};mapaServicosDb={};
+    if(resSrv.data){
+      resSrv.data.forEach(function(s){
+        mapaServicosDb[s.id]=s;
+        SRV[s.id]={n:s.nome,min:s.duracao_min,v:Number(s.valor)};
+      });
+    }
+    render();
+    carregarAgendamentosIniciais();
+  });
 }
 
 function carregarAgendamentosIniciais(){
@@ -432,9 +487,10 @@ function carregarAgendamentosIniciais(){
         $("rt-status").textContent="Erro ao ler agendamentos: "+q.error.message;
         return;
       }
+      S.ag=[];
       var lista=q.data||[];
       lista.forEach(sincronizarAgendamentoNaLista);
-      $("rt-status").textContent="Online ("+lista.length+" agendamento(s) carregado(s)). Aguardando novos...";
+      $("rt-status").textContent="Online ("+lista.length+" agendamento(s)).";
       var ultimoPendente=lista.filter(function(x){return x.status==="agendado"}).pop();
       if(ultimoPendente){
         var srvNome=(mapaServicosDb[ultimoPendente.servico_id]||{}).nome||"";
@@ -449,22 +505,6 @@ function carregarAgendamentosIniciais(){
 }
 
 function iniciarRealtimeSupabase(){
-  if(!sbClient){
-    $("rt-status").textContent="Supabase: SDK não carregado.";
-    return;
-  }
-  $("rt-status").textContent="Supabase: conectando à barbearia...";
-
-  sbClient.from("servicos").select("id,nome,valor,duracao_min").eq("barbearia_id",BARBEARIA_ID).then(function(resSrv){
-    if(resSrv.data){
-      resSrv.data.forEach(function(s){mapaServicosDb[s.id]=s});
-      S.ag.forEach(function(item){
-        if(item.db_id&&item.srv_nome==="Serviço agendado")render();
-      });
-    }
-    carregarAgendamentosIniciais();
-  });
-
   if(canalRealtime)sbClient.removeChannel(canalRealtime);
   canalRealtime=sbClient
     .channel("painel-agendamentos-"+BARBEARIA_ID)
@@ -486,20 +526,89 @@ function iniciarRealtimeSupabase(){
         }
       }
     )
-    .subscribe(function(status){
-      if(status==="SUBSCRIBED"){
-        carregarAgendamentosIniciais();
-      }
-    });
+    .subscribe();
 }
 
-load();
-initAuth();
-$("nbi").value=(NOME==='Barbearia Modelo'?'':NOME);
-$("pxk").value=PIX.k;
-$("pxn").value=PIX.n;
-$("pxc").value=PIX.c;
-render();
+function resolverBarbeariaDoUsuario(userId, cb){
+  sbClient.from("perfis").select("barbearia_id,papel").eq("user_id",userId).then(function(res){
+    if(res.error||!res.data||!res.data.length){
+      cb("Usuário sem barbearia vinculada na tabela perfis.");
+      return;
+    }
+    var escolhida=res.data[0].barbearia_id;
+    if(BARBEARIA_URL){
+      var bate=res.data.some(function(p){return p.barbearia_id===BARBEARIA_URL});
+      if(!bate){
+        cb("Seu perfil não tem permissão para esta barbearia da URL.");
+        return;
+      }
+      escolhida=BARBEARIA_URL;
+    }
+    BARBEARIA_ID=escolhida;
+    cb(null);
+  });
+}
+
+function lockUi(msg){
+  document.body.classList.add("locked");
+  $("lp").value="";
+  if(msg)$("lm").textContent=msg;
+}
+
+function unlock(){
+  document.body.classList.remove("locked");
+  $("lm").textContent="";
+  carregarDadosBarbearia();
+  iniciarRealtimeSupabase();
+}
+
+$("lf").addEventListener("submit",function(e){
+  e.preventDefault();
+  if(!sbClient){$("lm").textContent="SDK do Supabase não carregou.";return}
+  $("lb").disabled=true;
+  $("lm").textContent="Entrando...";
+  sbClient.auth.signInWithPassword({
+    email:$("le").value.trim(),
+    password:$("lp").value
+  }).then(function(res){
+    $("lb").disabled=false;
+    if(res.error){$("lm").textContent="E-mail ou senha inválidos.";return}
+    resolverBarbeariaDoUsuario(res.data.user.id,function(err){
+      if(err){
+        sbClient.auth.signOut();
+        lockUi(err);
+        return;
+      }
+      unlock();
+    });
+  });
+});
+
+$("sair").addEventListener("click",function(){
+  if(canalRealtime&&sbClient)sbClient.removeChannel(canalRealtime);
+  if(sbClient)sbClient.auth.signOut();
+  BARBEARIA_ID="";
+  S.ag=[];
+  lockUi("Sessão encerrada.");
+});
+
+aplicaNome();
+if(sbClient){
+  sbClient.auth.getSession().then(function(res){
+    var sess=res.data&&res.data.session;
+    if(sess&&sess.user){
+      resolverBarbeariaDoUsuario(sess.user.id,function(err){
+        if(!err)unlock();
+        else lockUi(err);
+      });
+    }else{
+      lockUi("");
+    }
+  });
+}else{
+  lockUi("SDK do Supabase não carregou.");
+}
+
 setInterval(tick,1000);
 setInterval(function(){if(!$("sala").classList.contains("hide"))renderSala()},30000);
 </script>
