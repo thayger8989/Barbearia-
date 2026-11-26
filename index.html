@@ -116,12 +116,12 @@ option{background:#15151a;color:#f4ecd8}
 <div id="sides">
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a1c"/><stop offset=".35" stop-color="#f3d58a"/><stop offset=".6" stop-color="#c58f3a"/><stop offset="1" stop-color="#f0cd7e"/></linearGradient>
-<linearGradient id="gChrome" x1="0" x2="1"><stop offset="0" stop-color="#555"/><stop offset=".25" stop-color="#f4f4f4"/><stop offset=".5" stop-color="#8d8d8d"/><stop offset=".75" stop-color="#e6e6e6"/><stop offset="1" stop-color="#4a4a4a"/></linearGradient>
+<linearGradient id="gChrome" x1="0" y1="0" x2="1"><stop offset="0" stop-color="#555"/><stop offset=".25" stop-color="#f4f4f4"/><stop offset=".5" stop-color="#8d8d8d"/><stop offset=".75" stop-color="#e6e6e6"/><stop offset="1" stop-color="#4a4a4a"/></linearGradient>
 <linearGradient id="gMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ccd2"/><stop offset=".55" stop-color="#8e929a"/><stop offset="1" stop-color="#e8e9ec"/></linearGradient>
-<linearGradient id="gCyl" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".65"/><stop offset=".3" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>
+<linearGradient id="gCyl" x1="0" y1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".65"/><stop offset=".3" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>
 <linearGradient id="gMarble" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d0d11"/><stop offset=".5" stop-color="#1c1c22"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
-<linearGradient id="gWood" x1="0" x2="1"><stop offset="0" stop-color="#2a1d10"/><stop offset=".5" stop-color="#7a5a2c"/><stop offset="1" stop-color="#241709"/></linearGradient>
-<linearGradient id="gMarbleR" x1="0" x2="1"><stop offset="0" stop-color="#14141a" stop-opacity="0"/><stop offset=".3" stop-color="#14141a" stop-opacity=".95"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
+<linearGradient id="gWood" x1="0" y1="0" x2="1"><stop offset="0" stop-color="#2a1d10"/><stop offset=".5" stop-color="#7a5a2c"/><stop offset="1" stop-color="#241709"/></linearGradient>
+<linearGradient id="gMarbleR" x1="0" y1="0" x2="1"><stop offset="0" stop-color="#14141a" stop-opacity="0"/><stop offset=".3" stop-color="#14141a" stop-opacity=".95"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
 <radialGradient id="gGlow"><stop offset="0" stop-color="#ffc766" stop-opacity=".85"/><stop offset=".4" stop-color="#e59a2e" stop-opacity=".25"/><stop offset="1" stop-color="#e59a2e" stop-opacity="0"/></radialGradient>
 <radialGradient id="gRed"><stop offset="0" stop-color="#e0262e" stop-opacity=".8"/><stop offset="1" stop-color="#e0262e" stop-opacity="0"/></radialGradient>
 <pattern id="pPole" width="40" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><rect width="40" height="80" fill="#f4efe6"/><rect width="40" height="20" fill="#d4172c"/><rect y="40" width="40" height="20" fill="#1c48a8"/><animate attributeName="y" from="0" to="80" dur="5s" repeatCount="indefinite"/></pattern>
@@ -340,7 +340,7 @@ var SUPABASE_URL="https://uklmnvkpigftxjmafghr.supabase.co";
 var SUPABASE_KEY="sb_publishable_stpLatXXopEoqkaOOXfFsg_K1hKBKWM";
 var BARBEARIA_URL=new URLSearchParams(window.location.search).get("barbearia")||"";
 var BARBEARIA_ID="";
-var VERSAO="1.7";
+var VERSAO="1.8";
 
 var sbClient=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
 var canalRealtime=null;
@@ -358,7 +358,7 @@ function pv(a){return a.v!=null?Number(a.v):(SRV[a.srv]?SRV[a.srv].v:0)}
 function pm(a){return a.min!=null?Number(a.min):(SRV[a.srv]?SRV[a.srv].min:30)}
 function by(id){return S.ag.filter(function(a){return a.id===id})[0]}
 function sorted(st){return S.ag.filter(function(a){return st.indexOf(a.st)>-1}).sort(function(a,b){return (a.data||"")+(a.hora||"")<(b.data||"")+(b.hora||"")?-1:1})}
-function hojeIso(){return new Date().toISOString().slice(0,10)}
+function hojeIso(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 var LBL={agendado:"Agendado",chegou:"No local",atendendo:"Em atendimento",finalizado:"Finalizado",faltou:"Faltou",cancelado:"Cancelado"};
 
 var timerAlerta=null,audioCtx=null,alertasVistos={};
@@ -702,7 +702,7 @@ var s=SRV[$("srv").value],v=s?s.v:0;
 b.innerHTML='<div class="mut">Chave Pix para pagamento</div><div class="nm">'+esc(PIX.k)+'</div><div class="mut">Valor: '+brl(v)+'</div><div class="acts"><button type="button" class="b" data-cp="k">Copiar chave</button><button type="button" class="b p" data-cp="b">Copiar Pix com valor</button></div>'}
 function cp(tx,btn){var old=btn.textContent;function ok(){btn.textContent="Copiado";setTimeout(function(){btn.textContent=old},1500)}
 function fb(){var a=document.createElement("textarea");a.value=tx;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){btn.textContent="Não foi possível copiar"}document.body.removeChild(a)}
-if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(ok,fb)}else fb()}
+if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(tx).then(ok,function(){document.execCommand("copy");ok()})}else fb()}
 function fillSel(){var s=$("srv"),cur=s.value;s.innerHTML="";Object.keys(SRV).forEach(function(k){var o=document.createElement("option");o.value=k;o.textContent=SRV[k].n+" ("+brl(SRV[k].v)+")";s.appendChild(o)});if(SRV[cur])s.value=cur}
 function renderSv(){var h="";Object.keys(SRV).forEach(function(k){var s=SRV[k];
 h+='<div class="card"><label>Nome<input data-k="'+k+'" data-f="n" value="'+esc(s.n).replace(/"/g,"&quot;")+'"></label><div class="grid"><label>Valor (R$)<input type="number" min="0" step="0.5" data-k="'+k+'" data-f="v" value="'+s.v+'"></label><label>Duração (min)<input type="number" min="5" step="5" data-k="'+k+'" data-f="min" value="'+s.min+'"></label></div><div class="acts"><button class="b d" data-del="'+k+'">Desativar</button></div></div>'});
@@ -879,7 +879,7 @@ function unlock(){
   if(!$("bk-data").value)$("bk-data").value=hojeIso();
   carregarDadosBarbearia();
   iniciarRealtimeSupabase();
-  $("lnk").value=location.origin+location.pathname.replace(/[^\/]*$/,"Cliente.html")+"?barbearia="+BARBEARIA_ID;
+  $("lnk").value="https://barbearia.webappvortexstudiopremium.com.br/Cliente.html?barbearia="+BARBEARIA_ID;
 }
 
 $("lf").addEventListener("submit",function(e){
