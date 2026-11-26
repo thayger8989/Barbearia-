@@ -45,7 +45,7 @@ input,select{padding:10px;border-radius:8px;border:1px solid var(--bd);backgroun
 .deco .c{fill:var(--card)}.deco .g{fill:var(--bg)}.deco .r1{fill:var(--red)}.deco .b1{fill:var(--blue)}.deco .t{stroke-width:2;opacity:.45}
 #lock{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);align-items:center;justify-content:center;padding:16px}
 body.locked #lock{display:flex}
-body.locked>*:not(#lock):not(#ver){display:none}
+body.locked>*:not(#lock):not(#ver):not(#sides){display:none}
 #ver{position:fixed;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:12px;color:var(--mut);opacity:.85;pointer-events:none;z-index:101}
 .lk{width:100%;max-width:360px}
 :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
@@ -54,52 +54,186 @@ body.locked>*:not(#lock):not(#ver){display:none}
 #alerta-agendamento.ativo{display:flex}
 #alerta-agendamento button{padding:6px 12px;border-radius:8px;border:0;background:#fff;color:#14213d;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
 @keyframes piscarAlerta{0%{background-color:#c8372d;transform:translateX(-50%) scale(1)}100%{background-color:#d97706;transform:translateX(-50%) scale(1.03)}}
+
+/* Login premium Vortex Studio - réplica da arte de referência */
+#lock{background:transparent;overflow:auto;align-items:flex-start;isolation:isolate;padding:0}
+.side{overflow:visible;position:fixed;top:0;height:100vh;width:auto;display:none;pointer-events:none;z-index:-1}
+.sl{left:0}.sr{right:0}
+@media(min-width:1000px){.side{display:block}}
+.login-scene{position:relative;width:100%;min-height:100%;margin:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px 16px 22px}
+.logo{width:clamp(250px,min(92vw,calc((100vh - 500px)*1.4)),520px);height:auto;filter:drop-shadow(0 10px 24px rgba(0,0,0,.7))}
+.tag2{font:italic 700 22px/1 "Segoe Script","Brush Script MT",cursive;color:#e3b85a;margin-top:-6px}
+@media(min-width:1000px){.tag2{display:none}}
+.lk{width:100%;max-width:540px;position:relative;background:linear-gradient(160deg,rgba(24,24,28,.96),rgba(8,8,11,.97));border:1.5px solid #c9a05a;border-radius:20px;padding:22px 30px 26px;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 22px 60px rgba(0,0,0,.65),0 0 40px rgba(201,160,90,.15),inset 0 0 30px rgba(0,0,0,.5)}
+.lk:after{content:"";position:absolute;left:25%;right:25%;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,#f3d58a,transparent)}
+#lkn{font:700 32px/1.15 Georgia,serif;color:#fff;margin:0}
+#lkt{color:#d8cdb9;margin:6px 0 18px;font:15px/1.4 Georgia,serif}
+#lf{display:block}
+.fld{position:relative;display:block;margin-bottom:14px}
+.fld svg{position:absolute;left:14px;top:50%;width:26px;height:26px;transform:translateY(-50%);stroke:#d6a84f;fill:none;stroke-width:1.6;pointer-events:none}
+.fld:after{content:"";position:absolute;left:52px;top:14px;bottom:14px;width:1px;background:rgba(201,160,90,.25);pointer-events:none}
+.lk input{width:100%;height:58px;padding:0 16px 0 66px;background:#0a0a0c;border:1.5px solid #8a6a38;border-radius:11px;color:#fff;font-size:18px;font-family:inherit}
+.lk input::placeholder{color:#8d8a84}
+.lk input:focus{outline:none;border-color:#f0cd7e;box-shadow:0 0 0 3px rgba(240,205,126,.15)}
+.lk button.p{width:100%;height:60px;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:21px;font-weight:700;color:#1a1308;border:1px solid #f3d58a;border-radius:11px;background:linear-gradient(180deg,#f0d38c,#cfa24f 55%,#b98737);box-shadow:inset 0 1px rgba(255,255,255,.5),0 6px 18px rgba(0,0,0,.4);cursor:pointer;transition:filter .2s,transform .2s}
+.lk button.p:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.lk button.p:disabled{opacity:.7;cursor:wait}
+.lk button.p svg{width:24px;height:24px;stroke:#1a1308;fill:none;stroke-width:2}
+#lm{color:#f0b8a8;min-height:18px;margin:10px 0 0}
+.login-footer{display:flex;flex-direction:column;align-items:center;gap:6px;color:#d9c9a5;font:13px Georgia,serif;letter-spacing:3px;text-align:center}
+.stars{display:flex;align-items:center;gap:14px;color:#e3b85a;width:min(380px,80vw);font-size:16px;letter-spacing:0}
+.stars big{font-size:26px}
+.stars:before,.stars:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,#b98d45)}
+.stars:after{transform:scaleX(-1)}
+@media(max-width:520px){.lk{padding:18px 16px 20px}.lk input{height:52px;padding-left:58px;font-size:17px}.fld:after{left:46px}#lkn{font-size:28px}.login-footer{font-size:11px;letter-spacing:2px}}
+
+/* Tema premium Vortex Studio (painel interno) */
+html:root:root{--bg:#0b0b0e;--card:#15151a;--tx:#f4ecd8;--mut:#b9ad94;--bd:#3d3220;--red:#e8584f;--blue:#6aa6ea;--ok:#6fd09a;--btn:#e3b85a;--btnt:#1a1308;color-scheme:dark}
+html{background:radial-gradient(ellipse at 50% 0,rgba(185,130,48,.16),transparent 50%),radial-gradient(ellipse at 10% 80%,rgba(160,30,30,.14),transparent 40%),linear-gradient(135deg,#0a0a0d,#15151b 50%,#0a0a0d),#09090c;background-attachment:fixed;background-repeat:no-repeat}
+body{background:transparent}
+body:not(.locked) .side{opacity:.5}
+.mini-logo{display:block;width:min(210px,62%);height:auto;margin:0 auto 4px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.7))}
+h1{color:#f6e7c1}h2{color:#e3b85a;letter-spacing:.4px}
+.card{background:linear-gradient(160deg,rgba(24,24,28,.94),rgba(10,10,13,.96));border:1px solid rgba(201,160,90,.45);box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.04)}
+.pole{height:12px;border:1px solid #c9a05a;background:repeating-linear-gradient(135deg,#d4172c 0 12px,#f4efe6 12px 24px,#1c48a8 24px 36px,#f4efe6 36px 48px);box-shadow:0 0 14px rgba(201,160,90,.25)}
+.free{border-color:#c9a05a}.free b{color:#e3b85a}
+nav button,button.b{background:#17171c;border:1px solid #6b5430;color:#f0e2c0}
+nav button.on,button.p{background:linear-gradient(180deg,#f0d38c,#cfa24f 55%,#b98737);color:#1a1308;border-color:#f3d58a}
+button.d{background:#17171c;color:#ff8d84;border-color:#a8433b}
+label{color:#d5b77f}
+input,select{background:#0a0a0c;border:1.5px solid #6b5430;color:#fff;border-radius:10px}
+input:focus,select:focus{outline:none;border-color:#f0cd7e;box-shadow:0 0 0 3px rgba(240,205,126,.15)}
+option{background:#15151a;color:#f4ecd8}
+.tag{border-color:#6b5430}
+.swap{margin:14px 0 0;text-align:center;color:#d8cdb9;font:15px Georgia,serif}
+.swap a{color:#e3b85a;font-weight:700;text-decoration:underline;cursor:pointer}
+#sf,.sw-reg{display:none}
+.lk.reg #lf,.lk.reg .sw-login{display:none}
+.lk.reg #sf{display:block}.lk.reg .sw-reg{display:block}
 </style>
 </head>
 <body class="locked">
+<div id="sides">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="gGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8a5a1c"/><stop offset=".35" stop-color="#f3d58a"/><stop offset=".6" stop-color="#c58f3a"/><stop offset="1" stop-color="#f0cd7e"/></linearGradient>
+<linearGradient id="gChrome" x1="0" x2="1"><stop offset="0" stop-color="#555"/><stop offset=".25" stop-color="#f4f4f4"/><stop offset=".5" stop-color="#8d8d8d"/><stop offset=".75" stop-color="#e6e6e6"/><stop offset="1" stop-color="#4a4a4a"/></linearGradient>
+<linearGradient id="gMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#c9ccd2"/><stop offset=".55" stop-color="#8e929a"/><stop offset="1" stop-color="#e8e9ec"/></linearGradient>
+<linearGradient id="gCyl" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".65"/><stop offset=".3" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></linearGradient>
+<linearGradient id="gMarble" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d0d11"/><stop offset=".5" stop-color="#1c1c22"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
+<linearGradient id="gWood" x1="0" x2="1"><stop offset="0" stop-color="#2a1d10"/><stop offset=".5" stop-color="#7a5a2c"/><stop offset="1" stop-color="#241709"/></linearGradient>
+<linearGradient id="gMarbleR" x1="0" x2="1"><stop offset="0" stop-color="#14141a" stop-opacity="0"/><stop offset=".3" stop-color="#14141a" stop-opacity=".95"/><stop offset="1" stop-color="#0b0b0e"/></linearGradient>
+<radialGradient id="gGlow"><stop offset="0" stop-color="#ffc766" stop-opacity=".85"/><stop offset=".4" stop-color="#e59a2e" stop-opacity=".25"/><stop offset="1" stop-color="#e59a2e" stop-opacity="0"/></radialGradient>
+<radialGradient id="gRed"><stop offset="0" stop-color="#e0262e" stop-opacity=".8"/><stop offset="1" stop-color="#e0262e" stop-opacity="0"/></radialGradient>
+<pattern id="pPole" width="40" height="80" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><rect width="40" height="80" fill="#f4efe6"/><rect width="40" height="20" fill="#d4172c"/><rect y="40" width="40" height="20" fill="#1c48a8"/><animate attributeName="y" from="0" to="80" dur="5s" repeatCount="indefinite"/></pattern>
+<pattern id="pPole2" width="20" height="32" patternUnits="userSpaceOnUse" patternTransform="rotate(-38)"><rect width="20" height="32" fill="#f4efe6"/><rect width="20" height="8" fill="#d4172c"/><rect y="16" width="20" height="8" fill="#1c48a8"/></pattern>
+<pattern id="pQuilt" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="34" height="34" fill="#0d0d10"/><path d="M0 0H34M0 0V34" stroke="#c9a05a" stroke-opacity=".55" stroke-width="1.5"/><circle r="1.8" fill="#e3b85a"/></pattern>
+<path id="st" d="M0-10L2.9-3.1 10-3.1 4.5 1.5 6.2 9 0 4.8-6.2 9-4.5 1.5-10-3.1-2.9-3.1Z"/>
+<symbol id="logoVortex" viewBox="0 0 560 410">
+<path d="M196 70H364V196Q364 238 280 262Q196 238 196 196Z" fill="#0b0b0d" stroke="url(#gGold)" stroke-width="5"/>
+<path d="M205 78H355V194Q355 230 280 252Q205 230 205 194Z" fill="none" stroke="#6b5025" stroke-width="1.5"/>
+<path d="M232 252Q236 216 280 208Q324 216 328 252Z" fill="#101013"/><path d="M262 210L280 234L298 210Z" fill="#f2f2f2"/>
+<path d="M262 190H298V212Q280 226 262 212Z" fill="#c4906a"/>
+<ellipse cx="282" cy="140" rx="38" ry="50" fill="#d0a07a"/><ellipse cx="246" cy="146" rx="8" ry="13" fill="#bf8c66"/><path d="M318 140l9 12-9 3z" fill="#d0a07a"/>
+<path d="M244 134Q238 86 282 80Q330 80 326 128Q318 104 296 104Q262 100 250 128Z" fill="#1a1612"/>
+<path d="M246 150Q250 196 282 202Q318 196 322 150Q314 168 300 170Q282 160 264 170Q252 166 246 150Z" fill="#17120f"/>
+<path d="M296 131l14-2" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+<path d="M222 62L218 22L248 44L280 6L312 44L342 22L338 62Z" fill="url(#gGold)" stroke="#5a3d12" stroke-width="2"/><rect x="222" y="60" width="116" height="10" rx="3" fill="url(#gGold)"/>
+<g fill="#f3d58a"><circle cx="218" cy="20" r="5"/><circle cx="280" cy="6" r="5"/><circle cx="342" cy="20" r="5"/></g>
+<g id="mp"><rect x="108" y="56" width="36" height="14" rx="5" fill="url(#gChrome)"/><path d="M110 56Q110 32 126 30Q142 32 142 56Z" fill="#c8cdd4"/><rect x="110" y="70" width="32" height="104" fill="url(#pPole2)"/><rect x="110" y="70" width="32" height="104" fill="url(#gCyl)"/><rect x="108" y="172" width="36" height="16" rx="5" fill="url(#gChrome)"/></g>
+<use href="#mp" x="308"/>
+<path d="M20 322H196M364 322H540" stroke="url(#gGold)" stroke-width="3"/>
+<text x="280" y="302" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="700" font-size="104" textLength="520" lengthAdjust="spacingAndGlyphs" fill="url(#gMetal)" stroke="#b98d45" stroke-width="3" paint-order="stroke">BARBEARIA</text>
+<path d="M126 318H434L422 354H138Z" fill="#0b0b0d" stroke="url(#gGold)" stroke-width="3"/>
+<text x="280" y="346" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="32" fill="#e3b85a" textLength="262" lengthAdjust="spacingAndGlyphs">VORTEX STUDIO</text>
+<path d="M130 388H215M345 388H430" stroke="#b98d45" stroke-width="2"/>
+<g fill="#e3b85a"><use href="#st" transform="translate(240 388)"/><use href="#st" transform="translate(280 388) scale(1.7)"/><use href="#st" transform="translate(320 388)"/></g>
+</symbol>
+</defs></svg>
+<svg class="side sl" viewBox="0 0 540 941" preserveAspectRatio="xMinYMid meet" aria-hidden="true">
+<ellipse cx="60" cy="910" rx="240" ry="110" fill="url(#gRed)" opacity=".5"/>
+<ellipse cx="135" cy="400" rx="160" ry="330" fill="url(#gRed)" opacity=".28"/>
+<path d="M0 0H70L0 70Z" fill="#c8102e"/><path d="M85 0H190L0 190V85Z" fill="#14409a"/>
+<path d="M339 0V66" stroke="#222" stroke-width="3"/>
+<ellipse cx="339" cy="150" rx="160" ry="110" fill="url(#gGlow)"/>
+<path d="M258 135Q262 78 339 66Q416 78 420 135Z" fill="#17171a" stroke="#34343a" stroke-width="2"/>
+<ellipse cx="339" cy="135" rx="81" ry="8" fill="#ffd58a"/><circle cx="339" cy="134" r="11" fill="#fff4cf"/>
+<rect x="270" y="165" width="195" height="315" rx="4" fill="#121214" stroke="#3b342b" stroke-width="7"/>
+<rect x="282" y="177" width="171" height="291" fill="none" stroke="#5a4a30"/>
+<path d="M344 238l4-22 10 9 9-15 9 15 10-9 4 22z" fill="#a98a52"/>
+<g font-family="Impact,'Arial Narrow',sans-serif" fill="#a9a08f" text-anchor="middle"><text x="367" y="292" font-size="38">AQUI</text><text x="367" y="338" font-size="36" textLength="140" lengthAdjust="spacingAndGlyphs">VOCÊ SEMPRE</text><text x="367" y="382" font-size="36" textLength="140" lengthAdjust="spacingAndGlyphs">SAI MELHOR</text></g>
+<g stroke="#b8a98a" stroke-width="4" fill="none" stroke-linecap="round"><path d="M346 448L388 408M388 448L346 408"/><circle cx="342" cy="452" r="6"/><circle cx="392" cy="452" r="6"/></g>
+<g><ellipse cx="500" cy="440" rx="14" ry="38" fill="#1f3a26" transform="rotate(-25 500 440)"/><ellipse cx="520" cy="420" rx="12" ry="40" fill="#2f5a38" transform="rotate(15 520 420)"/><ellipse cx="480" cy="470" rx="12" ry="32" fill="#2a4d31" transform="rotate(-50 480 470)"/><ellipse cx="528" cy="470" rx="10" ry="34" fill="#1f3a26" transform="rotate(30 528 470)"/><rect x="492" y="500" width="40" height="40" rx="5" fill="#16161a"/></g>
+<rect x="398" y="520" width="16" height="36" rx="3" fill="#2a2420"/><rect x="396" y="512" width="20" height="10" rx="2" fill="#b98d45"/><rect x="424" y="500" width="22" height="56" rx="4" fill="#1d1d22"/>
+<path d="M62 190Q62 98 135 94Q208 98 208 190Z" fill="#17171c" stroke="url(#gChrome)" stroke-width="5"/>
+<path d="M85 150Q95 112 120 104" stroke="#fff" stroke-opacity=".35" stroke-width="4" fill="none" stroke-linecap="round"/>
+<ellipse cx="135" cy="92" rx="14" ry="10" fill="#c8102e" stroke="url(#gChrome)" stroke-width="3"/>
+<rect x="56" y="184" width="158" height="30" rx="9" fill="url(#gChrome)"/>
+<rect x="70" y="214" width="130" height="316" fill="url(#pPole)"/><rect x="70" y="214" width="130" height="316" fill="url(#gCyl)"/>
+<rect x="56" y="528" width="158" height="32" rx="9" fill="url(#gChrome)"/>
+<path d="M72 560H198L188 640H82Z" fill="#1a1a1e" stroke="url(#gChrome)" stroke-width="3"/>
+<path d="M165 528Q165 512 190 512H395Q415 512 420 535L452 760H140Z" fill="url(#pQuilt)" stroke="#3a3a42" stroke-width="3"/>
+<rect x="195" y="466" width="130" height="58" rx="22" fill="#0e0e11" stroke="#34343b" stroke-width="3"/><path d="M212 482Q260 472 308 482" stroke="#fff" stroke-opacity=".18" stroke-width="3" fill="none"/>
+<rect x="130" y="758" width="420" height="126" rx="30" fill="url(#pQuilt)" stroke="#3a3a42" stroke-width="3"/>
+<rect x="104" y="646" width="190" height="50" rx="22" fill="#0e0e11" stroke="#d94a4a" stroke-opacity=".7" stroke-width="3"/>
+<rect x="96" y="690" width="200" height="14" rx="6" fill="url(#gChrome)"/><rect x="118" y="704" width="24" height="170" fill="url(#gChrome)"/>
+<rect x="410" y="654" width="130" height="42" rx="18" fill="#0e0e11" stroke="#3a3a42" stroke-width="3"/><rect x="404" y="692" width="136" height="12" rx="5" fill="url(#gChrome)"/>
+<path d="M140 880H215L246 941H112Z" fill="url(#gChrome)"/><rect x="330" y="884" width="46" height="57" fill="url(#gChrome)"/>
+</svg>
+
+<svg class="side sr" viewBox="0 0 520 941" preserveAspectRatio="xMaxYMid meet" aria-hidden="true">
+<path d="M480 941H425L520 846V901Z" fill="#c8102e"/><path d="M415 941H350L520 771V836Z" fill="#14409a"/>
+<path d="M228 0V66" stroke="#222" stroke-width="3"/>
+<ellipse cx="228" cy="150" rx="160" ry="110" fill="url(#gGlow)"/>
+<path d="M147 135Q151 78 228 66Q305 78 309 135Z" fill="#17171a" stroke="#34343a" stroke-width="2"/>
+<ellipse cx="228" cy="135" rx="81" ry="8" fill="#ffd58a"/><circle cx="228" cy="134" r="11" fill="#fff4cf"/>
+<rect x="476" y="0" width="44" height="560" fill="url(#gWood)"/>
+<g fill="#16161a" stroke="#4a3a1c"><rect x="490" y="60" width="30" height="76" rx="8"/><rect x="494" y="48" width="22" height="14" fill="#b98d45"/><rect x="486" y="170" width="34" height="62" rx="8"/><rect x="486" y="282" width="34" height="90" rx="8"/><rect x="492" y="268" width="22" height="16" fill="#b98d45"/><rect x="488" y="410" width="32" height="130" rx="8"/><rect x="494" y="394" width="20" height="18" fill="#b98d45"/></g>
+<g transform="rotate(-7 250 230)"><text x="10" y="240" font-family="'Segoe Script','Brush Script MT','Lucida Handwriting',cursive" font-style="italic" font-weight="700" font-size="60" textLength="470" lengthAdjust="spacingAndGlyphs"><tspan fill="#fff">Estilo </tspan><tspan fill="#e3b85a">· Confiança </tspan><tspan fill="#fff">· Atitude</tspan></text><path d="M120 292Q300 250 450 248" stroke="url(#gGold)" stroke-width="5" fill="none" stroke-linecap="round"/></g>
+<g stroke="url(#gGold)" stroke-width="9" fill="none" stroke-linecap="round"><ellipse cx="100" cy="470" rx="30" ry="40" transform="rotate(-20 100 470)" stroke-width="7"/><ellipse cx="198" cy="455" rx="30" ry="40" transform="rotate(20 198 455)" stroke-width="7"/><path d="M120 505L196 640M178 490L130 640"/></g><circle cx="148" cy="565" r="7" fill="#c58f3a"/>
+<g transform="rotate(12 300 540)"><rect x="268" y="470" width="82" height="170" rx="14" fill="#121214" stroke="#34343a" stroke-width="2"/><rect x="272" y="446" width="74" height="28" rx="3" fill="url(#gChrome)"/><path d="M278 446v-12M288 446v-12M298 446v-12M308 446v-12M318 446v-12M328 446v-12M338 446v-12" stroke="#bbb" stroke-width="3"/><path d="M280 510H338M280 524H338M280 538H338" stroke="#2c2c31" stroke-width="3"/></g>
+<path d="M110 628V780Q110 808 218 808Q326 808 326 780V628Z" fill="#0d0d10" stroke="#2c2c31" stroke-width="2"/><ellipse cx="218" cy="628" rx="108" ry="14" fill="#050506" stroke="url(#gGold)" stroke-width="2"/>
+<g stroke="url(#gGold)" stroke-width="4" fill="none" stroke-linecap="round"><path d="M200 690L238 745M238 690L200 745"/><circle cx="196" cy="750" r="6"/><circle cx="242" cy="750" r="6"/></g>
+<g fill="#e3b85a"><use href="#st" transform="translate(218 676) scale(.8)"/><use href="#st" transform="translate(160 722) scale(.7)"/><use href="#st" transform="translate(276 722) scale(.7)"/></g>
+<path d="M340 700Q430 654 520 672V784Q430 774 340 806Z" fill="#2c2c30" stroke="#3b3b40" stroke-width="2"/><rect x="380" y="792" width="150" height="92" rx="42" fill="#34343a" stroke="#44444a" stroke-width="2"/><path d="M360 720H500M360 744H500M410 820H520M410 846H520" stroke="#3b3b42" stroke-width="2"/>
+<path d="M0 872Q200 812 520 842V941H0Z" fill="url(#gMarble)"/><path d="M40 941Q120 890 200 905M300 880Q380 900 420 941" stroke="#fff" stroke-opacity=".1" stroke-width="2" fill="none"/>
+<g transform="rotate(10 220 850)"><rect x="40" y="822" width="330" height="56" rx="26" fill="#0d0d0f" stroke="#2c2c31" stroke-width="2"/><rect x="326" y="824" width="28" height="52" fill="url(#gGold)"/><rect x="8" y="828" width="44" height="44" rx="3" fill="url(#gChrome)"/><path d="M14 828v-8M22 828v-8M30 828v-8M38 828v-8M46 828v-8" stroke="#bbb" stroke-width="2.5"/><rect x="120" y="838" width="110" height="24" rx="6" fill="#1b1b20"/></g>
+<path d="M376 868Q440 900 520 906" stroke="#101012" stroke-width="7" fill="none"/>
+<g transform="rotate(5 200 915)"><rect x="60" y="904" width="300" height="22" rx="4" fill="#111114" stroke="#3a3a3f"/><path d="M80 904v8M100 904v8M120 904v8M140 904v8M160 904v8M180 904v8M200 904v8M220 904v8M240 904v8M260 904v8M280 904v8M300 904v8M320 904v8M340 904v8" stroke="#555" stroke-width="2"/></g>
+</svg>
+
+</div>
 <div id="alerta-agendamento" role="alert" aria-live="assertive">
   <span id="alerta-texto">Novo agendamento aguardando!</span>
   <button type="button" id="alerta-ok">OK, vi</button>
 </div>
 <div id="ver"></div>
 <div id="lock">
-<div class="card lk">
-<h1 id="lkn">Painel da Barbearia</h1>
+<div class="login-scene">
+<svg class="logo" viewBox="0 0 560 410" role="img" aria-label="Barbearia Vortex Studio"><use href="#logoVortex"/></svg>
+<div class="tag2" aria-hidden="true">Estilo · Confiança · Atitude</div>
+<div class="lk">
+<h1 id="lkn">Barbearia</h1>
 <p class="sub" id="lkt">Entre com o e-mail e senha cadastrados no painel.</p>
 <form id="lf">
-<label>E-mail<input id="le" type="email" autocomplete="email" required></label>
-<label>Senha<input id="lp" type="password" autocomplete="current-password" required></label>
-<button class="b p" type="submit" id="lb">Entrar</button>
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="M3 6.5l9 7 9-7"/></svg><input id="le" type="email" placeholder="E-mail" aria-label="E-mail" autocomplete="email" required></label>
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:#d6a84f"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none"/></svg><input id="lp" type="password" placeholder="Senha" aria-label="Senha" autocomplete="current-password" required></label>
+<button class="b p" type="submit" id="lb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5a1.5 1.5 0 0 1 1.5 1.5v13A1.5 1.5 0 0 1 19 20h-5M3 12h11M10 8l4 4-4 4"/></svg>Entrar</button>
+</form>
+<form id="sf">
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><input id="rg-nome" placeholder="Nome da sua barbearia" aria-label="Nome da barbearia" maxlength="40" autocomplete="organization" required></label>
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="M3 6.5l9 7 9-7"/></svg><input id="rg-email" type="email" placeholder="E-mail" aria-label="E-mail" autocomplete="email" required></label>
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:#d6a84f"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none"/></svg><input id="rg-s1" type="password" placeholder="Senha (mínimo 6 caracteres)" aria-label="Senha" autocomplete="new-password" minlength="6" required></label>
+<label class="fld"><svg viewBox="0 0 24 24" aria-hidden="true" style="fill:#d6a84f"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none"/></svg><input id="rg-s2" type="password" placeholder="Repita a senha" aria-label="Repita a senha" autocomplete="new-password" minlength="6" required></label>
+<button class="b p" type="submit" id="rg-b">Criar minha conta</button>
 </form>
 <p class="mut" id="lm"></p>
+<p class="swap sw-login">Ainda não tem acesso? <a id="sw-a" role="button" tabindex="0">Crie sua conta aqui</a></p>
+<p class="swap sw-reg">Já tem conta? <a id="sw-b" role="button" tabindex="0">Entrar</a></p>
+</div>
+<footer class="login-footer"><div class="stars">★<big>★</big>★</div>BELEZA E ESTILO EM UM SÓ LUGAR</footer>
 </div>
 </div>
-<svg class="deco l" viewBox="0 0 170 320" aria-hidden="true">
-<rect class="s c" x="25" y="15" width="120" height="205" rx="60"/>
-<rect class="s g" x="36" y="26" width="98" height="183" rx="49"/>
-<path class="s t" d="M62 95 L108 45"/>
-<path class="s t" d="M55 135 L120 62"/>
-<path class="s t" d="M60 175 L118 112"/>
-<path class="s" d="M12 250 H158"/>
-<path class="s" d="M30 250 V268 M140 250 V268"/>
-<rect class="s r1" x="34" y="214" width="16" height="36" rx="4"/>
-<rect class="s c" x="37" y="204" width="10" height="10" rx="2"/>
-<rect class="s b1" x="62" y="228" width="22" height="22" rx="4"/>
-<rect class="s c" x="98" y="241" width="44" height="9" rx="3"/>
-</svg>
-<svg class="deco r" viewBox="0 0 170 320" aria-hidden="true">
-<rect class="s r1" x="52" y="30" width="66" height="28" rx="13"/>
-<rect class="s r1" x="45" y="62" width="80" height="112" rx="18"/>
-<path class="s t" d="M60 85 V150 M85 80 V155 M110 85 V150"/>
-<rect class="s b1" x="22" y="150" width="28" height="11" rx="5"/>
-<rect class="s b1" x="120" y="150" width="28" height="11" rx="5"/>
-<path class="s" d="M36 161 V184 M134 161 V184"/>
-<rect class="s r1" x="34" y="180" width="102" height="30" rx="15"/>
-<rect class="s c" x="77" y="210" width="16" height="52" rx="4"/>
-<ellipse class="s c" cx="85" cy="272" rx="46" ry="11"/>
-<path class="s" d="M118 218 L138 248"/>
-<rect class="s b1" x="126" y="246" width="34" height="9" rx="4"/>
-</svg>
+<svg class="mini-logo" viewBox="0 0 560 410" aria-hidden="true"><use href="#logoVortex"/></svg>
 <div class="row"><h1 id="nomeb">Barbearia</h1><button class="b" id="sair" type="button">Sair</button></div>
 <p class="sub">Painel do barbeiro e administração.</p>
 <p class="mut" id="rt-status">Supabase: a aguardar ligação...</p>
@@ -145,6 +279,9 @@ body.locked>*:not(#lock):not(#ver){display:none}
 </section>
 
 <section id="svc" class="hide">
+<h2>Link para seus clientes</h2>
+<div class="card"><p class="mut" style="margin:0 0 8px">Envie este link para os clientes agendarem sozinhos.</p><input id="lnk" readonly>
+<div class="acts"><button class="b p" id="lnk-cp" type="button">Copiar link</button><span class="mut" id="lnk-m"></span></div></div>
 <h2>Dados da barbearia</h2>
 <div class="card">
 <label>Nome da barbearia<input id="nbi" autocomplete="off" maxlength="40" placeholder="Ex.: Barbearia do João"></label>
@@ -701,10 +838,19 @@ function iniciarRealtimeSupabase(){
     .subscribe();
 }
 
-function resolverBarbeariaDoUsuario(userId, cb){
+function resolverBarbeariaDoUsuario(userId, cb, jaTentou){
   sbClient.from("perfis").select("barbearia_id,papel").eq("user_id",userId).then(function(res){
     if(res.error||!res.data||!res.data.length){
-      cb("Usuário sem barbearia vinculada na tabela perfis.");
+      if(res.error||jaTentou){cb("Usuário sem barbearia vinculada na tabela perfis.");return}
+      sbClient.auth.getUser().then(function(u){
+        var md=u.data&&u.data.user&&u.data.user.user_metadata;
+        var nm=md&&md.barbearia_nome;
+        if(!nm){cb("Usuário sem barbearia vinculada na tabela perfis.");return}
+        sbClient.rpc("criar_barbearia_propria",{p_nome:nm}).then(function(r){
+          if(r.error){cb("Conta criada, mas não foi possível criar a barbearia: "+r.error.message);return}
+          resolverBarbeariaDoUsuario(userId,cb,true);
+        });
+      });
       return;
     }
     var escolhida=res.data[0].barbearia_id;
@@ -733,6 +879,7 @@ function unlock(){
   if(!$("bk-data").value)$("bk-data").value=hojeIso();
   carregarDadosBarbearia();
   iniciarRealtimeSupabase();
+  $("lnk").value=location.origin+location.pathname.replace(/[^\/]*$/,"Cliente.html")+"?barbearia="+BARBEARIA_ID;
 }
 
 $("lf").addEventListener("submit",function(e){
@@ -755,6 +902,50 @@ $("lf").addEventListener("submit",function(e){
       unlock();
     });
   });
+});
+
+function modoCadastro(on){
+  document.querySelector(".lk").classList.toggle("reg",on);
+  $("lkt").textContent=on?"Crie sua conta para ter acesso ao painel da sua barbearia.":"Entre com o e-mail e senha cadastrados no painel.";
+  $("lm").textContent="";
+}
+["sw-a","sw-b"].forEach(function(id){
+  var el=$(id);
+  el.addEventListener("click",function(){modoCadastro(id==="sw-a")});
+  el.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();modoCadastro(id==="sw-a")}});
+});
+
+$("sf").addEventListener("submit",function(e){
+  e.preventDefault();
+  if(!sbClient){$("lm").textContent="SDK do Supabase não carregou.";return}
+  var nome=$("rg-nome").value.trim(),em=$("rg-email").value.trim(),s1=$("rg-s1").value,s2=$("rg-s2").value;
+  if(s1.length<6){$("lm").textContent="A senha precisa ter pelo menos 6 caracteres.";return}
+  if(s1!==s2){$("lm").textContent="As senhas não são iguais.";return}
+  $("rg-b").disabled=true;
+  $("lm").textContent="Criando sua conta...";
+  sbClient.auth.signUp({email:em,password:s1,options:{data:{barbearia_nome:nome}}}).then(function(res){
+    $("rg-b").disabled=false;
+    if(res.error){$("lm").textContent="Não foi possível criar a conta: "+res.error.message;return}
+    var u=res.data&&res.data.user;
+    if(u&&u.identities&&!u.identities.length){$("lm").textContent="Este e-mail já tem cadastro. Use Entrar.";return}
+    if(res.data.session&&u){
+      resolverBarbeariaDoUsuario(u.id,function(err){
+        if(err){sbClient.auth.signOut();lockUi(err);return}
+        unlock();
+      });
+      return;
+    }
+    modoCadastro(false);
+    $("le").value=em;
+    $("lm").textContent="Conta criada! Confirme o e-mail que enviamos e depois entre aqui.";
+  });
+});
+
+$("lnk-cp").addEventListener("click",function(){
+  var i=$("lnk");i.select();
+  var ok=function(){$("lnk-m").textContent="Link copiado!"};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(i.value).then(ok,function(){document.execCommand("copy");ok()});
+  else{document.execCommand("copy");ok()}
 });
 
 $("sair").addEventListener("click",function(){
